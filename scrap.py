@@ -89,8 +89,8 @@ def format_message(id2name, id2score, id2rank):
 
     lines.sort(reverse=True)
 
-    message = ""
-    for i, line in enumerate(lines):
+    message = f"""{"Rk":<4}{"Score":<8}{"1st":<4}{"2nd":<4}{"3rd":<4}{"4th":<4}{"name"}\n"""
+    for i, line in enumerate(lines, start=1):
         score, name, rank = line
         if score >= 0:
             whole   = score // 10
@@ -100,7 +100,7 @@ def format_message(id2name, id2score, id2rank):
             decimal = abs(score) % 10
         score = f"{whole}.{decimal}"
 
-        message += f"{i: <4}{score:<8}{rank[0]:<4}{rank[1]:<4}{rank[2]:<4}{rank[3]:<4}{name}\n"
+        message += f"{i:<4}{score:<8}{rank[0]:<4}{rank[1]:<4}{rank[2]:<4}{rank[3]:<4}{name}\n"
     message = "```\n" + message + "```\n"
     return message
 
