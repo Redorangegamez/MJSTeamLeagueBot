@@ -42,6 +42,28 @@ def load_games():
 
     return games
 
+def get_username2name_mapping():
+    mp = {}
+    have_seen = set({})
+    dups = set({})
+    with open("names.csv") as f:
+        f.readline()  # first line column names
+        for line in f:
+            _, first_name, last_name, username, _ = line.split(",")
+            mp[username] = (first_name, last_name)
+            if first_name in have_seen:
+                dups.add(first_name)
+            else:
+                have_seen.add(first_name)
+    ret = {}
+    for username, name in mp.items():
+        first, last = name
+        if first in dups:
+            ret[username] = first + last[0].upper()
+        else:
+            ret[username] = first  # unique first name
+    return ret
+
 def calculate_score(games):
     id2name = {}
     id2score = {}
@@ -89,9 +111,15 @@ def format_message(id2name, id2score, id2rank):
 
     lines.sort(reverse=True)
 
+    username2name = get_username2name_mapping()
+
     message = f"""{"Rk":<4}{"Score":<8}{"1st":<4}{"2nd":<4}{"3rd":<4}{"4th":<4}{"name"}\n"""
     for i, line in enumerate(lines, start=1):
-        score, name, rank = line
+        score, username, rank = line
+
+        # if cannot find the mapping, use Majsoul username
+        name = username2name.get(username, username)  
+
         if score >= 0:
             whole   = score // 10
             decimal = abs(score) % 10
