@@ -23,7 +23,7 @@ def get_username2name_mapping():
     for username, name in mp.items():
         first, last = name
         if first in dups:
-            ret[username] = first + last[0].upper()
+            ret[username] = first + last.upper()
         else:
             ret[username] = first  # unique first name
     return ret
