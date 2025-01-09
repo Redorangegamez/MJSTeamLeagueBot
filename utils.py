@@ -104,13 +104,10 @@ def format_leaderboard(lines):
     for i, line in enumerate(lines, start=1):
         score, name, rank = line
 
-        if score >= 0:
-            whole   = score // 10
-            decimal = abs(score) % 10
-        else:
-            whole = score // 10 + 1
-            decimal = abs(score) % 10
-        score = f"{whole}.{decimal}"
+        decimal = abs(score) % 10
+        whole = abs(score) // 10
+        sign = "-" if score < 0 else ""
+        score = f"{sign}{whole}.{decimal}"
 
         message += f"{i:<4}{score:<8}{rank[0]:<4}{rank[1]:<4}{rank[2]:<4}{rank[3]:<4}{name}\n"
 
