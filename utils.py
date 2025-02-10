@@ -59,8 +59,11 @@ def calculate_score(games, all_players, name_mapping=None):
 
     for game in games:
         # removing game between MaxS, Dai, Cristi, and Felix
-        if game["result"]["uuid"] == "250210-76f05b61-0274-4142-9ec1-013ded273998":
-            continue
+        print(game)
+        if game["end_time"] == 1739139578:
+            print(game)
+            if game["uuid"] == "250210-76f05b61-0274-4142-9ec1-013ded273998":
+                continue
         players = [None] * 4
 
         for account in game["accounts"]:
