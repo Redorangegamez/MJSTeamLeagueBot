@@ -47,7 +47,6 @@ def get_username2team_mapping():
 def calculate_score(games, all_players, name_mapping=None):
     name2score = {}
     name2rank  = {}
-    games.
 
     for player in all_players:
         if name_mapping is not None:
