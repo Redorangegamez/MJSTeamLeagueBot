@@ -47,6 +47,7 @@ def get_username2team_mapping():
 def calculate_score(games, all_players, name_mapping=None):
     name2score = {}
     name2rank  = {}
+    games.
 
     for player in all_players:
         if name_mapping is not None:
@@ -58,6 +59,9 @@ def calculate_score(games, all_players, name_mapping=None):
         name2rank[player]  = [0, 0, 0, 0]
 
     for game in games:
+        # removing game between MaxS, Dai, Cristi, and Felix
+        if game.uuid == "250210-76f05b61-0274-4142-9ec1-013ded273998":
+            continue
         players = [None] * 4
 
         for account in game["accounts"]:
