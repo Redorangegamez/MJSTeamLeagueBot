@@ -5,7 +5,7 @@ import time
 import config
 from scrap import load_games, check_config
 from utils import *
-
+import requests
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -104,4 +104,51 @@ async def task():
     msg = await task.sanma_team_channel.fetch_message(task.sanma_team_msg_id)
     await msg.edit(content=team_msg)
 
-bot.run(config.BOT_TOKEN)
+if __name__ == "__main__":
+    # get mjs token
+    master_email = input("Email for the league host account: ")
+    master_email = master_email.strip()
+
+    r = requests.post(
+        "https://passport.mahjongsoul.com/account/auth_request",
+        headers = {
+          'Content-Type': 'application/json'
+        },
+        data = f"""{{"account":"{master_email}","lang":"en"}}""",
+    )
+
+    veri_code = int(input("Verification Code: "))
+    r = requests.post("https://passport.mahjongsoul.com/account/auth_submit",
+        headers = {
+          'Content-Type': 'application/json'
+        },
+        data = f"""{{"account":"{master_email}","code":"{veri_code}"}}""",
+    )
+
+    uid = r.json()["uid"]
+    token = r.json()["token"]
+    print(uid, token)
+
+    r = requests.post("https://passport.mahjongsoul.com/user/login",
+        headers = {
+          'Content-Type': 'application/json'
+        },
+        data=f"""{{"deviceId":"web|{uid}","token": "{token}", "uid": "{uid}"}}""",
+    )
+
+    access_token = r.json()["accessToken"]
+    print(access_token)
+
+    r = requests.post(
+        "https://engame.mahjongsoul.com/api/contest_gate/api/login",
+        params={
+            "method": "oauth2"
+        },
+        headers = {
+          'Content-Type': 'application/json'
+        },
+        data=f"""{{"code":"{access_token}","type": 7, "uid": {uid}}}""",
+    )
+
+    config.MS_TOKEN = "Majsoul " + r.json()["data"]["token"]
+    bot.run(config.BOT_TOKEN)
