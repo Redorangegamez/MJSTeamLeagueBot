@@ -5,7 +5,7 @@ def get_username2name_mapping():
     mp = {}
     have_seen = set({})
     dups = set({})
-    with open("names.csv") as f:
+    with open("names.csv", "r") as f:
         f.readline()  # first line column names
         for line in f:
             _, first_name, last_name, username, _ = line.split(",")
@@ -13,6 +13,7 @@ def get_username2name_mapping():
             # sanitize
             first_name = first_name.strip()
             last_name = last_name.strip()
+            username = username.strip()
 
             mp[username] = (first_name, last_name)
             if first_name in have_seen:
@@ -45,6 +46,10 @@ def get_username2team_mapping():
 # In case of team leaderboard, it maps multiple people
 # to the same names (the team name).
 def calculate_score(games, all_players, name_mapping=None):
+
+    assert len(games) != 0, "there's no game WTF"
+    n_player = len(games[0]["accounts"])  # trying to figure out whether its yonma or sanma
+
     name2score = {}
     name2rank  = {}
 
@@ -55,13 +60,13 @@ def calculate_score(games, all_players, name_mapping=None):
             player = name_mapping[player]
 
         name2score[player] = 0
-        name2rank[player]  = [0, 0, 0, 0]
+        name2rank[player]  = [0] * n_player
 
     for game in games:
         # removing game between MaxS, Dai, Cristi, and Felix
         if game["uuid"] == "250210-76f05b61-0274-4142-9ec1-013ded273998":
             continue
-        players = [None] * 4
+        players = [None] * n_player
 
         for account in game["accounts"]:
             name = account["nickname"]
@@ -73,10 +78,14 @@ def calculate_score(games, all_players, name_mapping=None):
             players[seat] = name
 
         scores = game["result"]["players"]
-        starting_score = sum([score["part_point_1"] for score in scores]) // 4
+        starting_score = sum([score["part_point_1"] for score in scores]) // n_player
         assert starting_score % 100 == 0
 
-        uma = config.uma[:]
+        uma = {
+            3: config.sanma_uma[:],
+            4: config.uma[:],
+        }[n_player]
+
         for rank, score in enumerate(scores):
             seat = score["seat"]
             # store the actual score * 10 so it's an integer
@@ -98,12 +107,26 @@ def calculate_score(games, all_players, name_mapping=None):
         rank = name2rank[name]
         lines.append((score, name, rank))
 
-    lines.sort(reverse=True)
+    """
+    If the player does not play any game, the rank
+    data will be an array with only 0s (length depends 
+    on sanma/yonma), and they should be rank the lowest 
+    on the leaderboard
+    """
+    lines.sort(reverse=True, key=lambda x: (x[0] if any(r > 0 for r in x[2]) else -100000000))
 
     return lines
 
 def format_leaderboard(lines):
-    message = f"""{"Rk":<4}{"Score":<8}{"1st":<4}{"2nd":<4}{"3rd":<4}{"4th":<4}{"name"}\n"""
+
+    assert len(lines) > 0, "no lines wtf"
+    n_player = len(lines[0][2])
+
+    message = {
+        3: f"""{"Rk":<4}{"Score":<8}{"1st":<4}{"2nd":<4}{"3rd":<4}{"name"}\n""",
+        4: f"""{"Rk":<4}{"Score":<8}{"1st":<4}{"2nd":<4}{"3rd":<4}{"4th":<4}{"name"}\n""",
+    }[n_player]
+
     for i, line in enumerate(lines, start=1):
         score, name, rank = line
 
@@ -112,7 +135,10 @@ def format_leaderboard(lines):
         sign = "-" if score < 0 else ""
         score = f"{sign}{whole}.{decimal}"
 
-        message += f"{i:<4}{score:<8}{rank[0]:<4}{rank[1]:<4}{rank[2]:<4}{rank[3]:<4}{name}\n"
+        if n_player == 3:
+            message += f"{i:<4}{score:<8}{rank[0]:<4}{rank[1]:<4}{rank[2]:<4}{name}\n"
+        else:
+            message += f"{i:<4}{score:<8}{rank[0]:<4}{rank[1]:<4}{rank[2]:<4}{rank[3]:<4}{name}\n"
 
     # group per 40 lines
     lines_per_msg = 40
