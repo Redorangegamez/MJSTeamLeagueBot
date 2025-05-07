@@ -26,7 +26,12 @@ def load_games_offset(tourn_id, season_id, offset, limit=100):
     }
     r = requests.get(url, params=params, headers=headers)
 
-    assert r.status_code == 200, "failed to fetch game records"
+    assert r.status_code == 200, f"""\
+Failed to fetch game records. Error code: {r.status_code}
+JSON = {r.json()}
+data = {r.text}
+"""
+
     data = r.json()
     return data["data"]["record_list"]
 
