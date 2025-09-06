@@ -133,7 +133,7 @@ if __name__ == "__main__":
     if veri_code:
         print("Verification Code:", code)
     else:
-        print("No verification code found.") """
+        print("No verification code found.")
     
     r = requests.post("https://passport.mahjongsoul.com/account/auth_submit",
         headers = {
