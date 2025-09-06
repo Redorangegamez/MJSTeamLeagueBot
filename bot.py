@@ -7,6 +7,18 @@ from scrap import load_games, check_config
 from utils import *
 import requests
 
+import imaplib
+import email
+from email.header import decode_header
+import re
+from bs4 import BeautifulSoup # pip3 install beautifulsoup4
+from dotenv import load_dotenv
+import os
+
+# Gmail credentials
+EMAIL = config.GMAIL
+PASSWORD = config.GMAIL_PASSWORD
+
 intents = discord.Intents.default()
 intents.message_content = True
 
@@ -117,7 +129,12 @@ if __name__ == "__main__":
         data = f"""{{"account":"{master_email}","lang":"en"}}""",
     )
 
-    veri_code = int(input("Verification Code: "))
+    veri_code = get_verification_code()
+    if veri_code:
+        print("Verification Code:", code)
+    else:
+        print("No verification code found.") """
+    
     r = requests.post("https://passport.mahjongsoul.com/account/auth_submit",
         headers = {
           'Content-Type': 'application/json'
@@ -152,3 +169,63 @@ if __name__ == "__main__":
 
     config.MS_TOKEN = "Majsoul " + r.json()["data"]["token"]
     bot.run(config.BOT_TOKEN)
+
+def get_verification_code():
+    # Connect to Gmail IMAP server
+    mail = imaplib.IMAP4_SSL("imap.gmail.com")
+
+    try:
+        # Log in to your Gmail account
+        mail.login(EMAIL, PASSWORD)
+
+        # Select the inbox
+        mail.select("inbox")
+
+        # Search for emails from the specific sender with the specific subject
+        status, messages = mail.search(
+            None,
+            '(FROM "do-not-reply@passport.yo-star.com" SUBJECT "Verification Code")'
+        )
+
+        if status == "OK" and messages[0]:
+            # Get the most recent email ID
+            email_ids = messages[0].split()
+            latest_email_id = email_ids[-1]
+
+            # Fetch the email content
+            status, msg_data = mail.fetch(latest_email_id, "(RFC822)")
+
+            if status == "OK":
+                for response_part in msg_data:
+                    if isinstance(response_part, tuple):
+                        # Parse the raw email content
+                        msg = email.message_from_bytes(response_part[1])
+
+                        # Decode the email subject
+                        subject, encoding = decode_header(msg["Subject"])[0]
+                        if isinstance(subject, bytes):
+                            subject = subject.decode(encoding or "utf-8")
+
+                        # Extract the email body
+                        if msg.is_multipart():
+                            for part in msg.walk():
+                                content_type = part.get_content_type()
+                                if content_type == "text/html":
+                                    html_content = part.get_payload(decode=True).decode()
+                                    break
+                        else:
+                            html_content = msg.get_payload(decode=True).decode()
+
+                        # Parse the HTML content with BeautifulSoup
+                        soup = BeautifulSoup(html_content, "html.parser")
+                        # Look for the verification code using regex in the text
+                        match = re.search(r"\b\d{6}\b", soup.get_text())
+                        if match:
+                            return match.group(0)
+
+        print("No matching emails found.")
+    except Exception as e:
+        print("An error occurred:", e)
+    finally:
+        # Close the connection
+        mail.logout()
