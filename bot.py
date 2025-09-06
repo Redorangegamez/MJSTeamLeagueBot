@@ -40,6 +40,7 @@ def get_verification_code():
             None,
             '(FROM "do-not-reply@passport.yo-star.com" SUBJECT "Verification Code")'
         )
+        print(status, messages)
 
         if status == "OK" and messages[0]:
             # Get the most recent email ID
@@ -177,7 +178,7 @@ async def task():
     await msg.edit(content=team_msg)
 
 if __name__ == "__main__":
-    veri_code = get_verification_code()
+    veri_code = await get_verification_code()
     if veri_code:
         print("Verification Code:", code)
     else:
