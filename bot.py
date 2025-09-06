@@ -187,7 +187,7 @@ if __name__ == "__main__":
         headers = {
           'Content-Type': 'application/json'
         },
-        data = f"""{{"account":"{master_email}","code":"{veri_code}"}}""",
+        data = f"""{{"account":"{EMAIL}","code":"{veri_code}"}}""",
     )
 
     uid = r.json()["uid"]
