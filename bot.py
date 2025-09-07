@@ -182,7 +182,7 @@ async def task():
     msg = await task.sanma_team_channel.fetch_message(task.sanma_team_msg_id)
     await msg.edit(content=team_msg)
 
-if __name__ == "__main__":
+async def main():
     print("Waiting 5 seconds before checking Gmail...")
     await asyncio.sleep(1)
     print("4")
@@ -243,3 +243,6 @@ if __name__ == "__main__":
 
     config.MS_TOKEN = "Majsoul " + r.json()["data"]["token"]
     bot.run(config.BOT_TOKEN)
+
+if __name__ == "__main__":
+    asyncio.run(main())
