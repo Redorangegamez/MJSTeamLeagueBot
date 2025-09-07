@@ -24,7 +24,7 @@ intents.message_content = True
 
 bot = discord.Client(intents=intents)
 
-def get_verification_code():
+async def get_verification_code():
     # Connect to Gmail IMAP server
     mail = imaplib.IMAP4_SSL("imap.gmail.com")
 
@@ -178,9 +178,10 @@ async def task():
     await msg.edit(content=team_msg)
 
 if __name__ == "__main__":
-    veri_code = await get_verification_code()
+    code = input('Verification Code:')
+    veri_code = get_verification_code()
     if veri_code:
-        print("Verification Code:", code)
+        print("Verification Code:", veri_code)
     else:
         print("No verification code found.")
     
@@ -188,7 +189,7 @@ if __name__ == "__main__":
         headers = {
           'Content-Type': 'application/json'
         },
-        data = f"""{{"account":"{EMAIL}","code":"{veri_code}"}}""",
+        data = f"""{{"account":"{EMAIL}","code":"{code}"}}""",
     )
 
     uid = r.json()["uid"]
