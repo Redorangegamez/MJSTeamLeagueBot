@@ -7,6 +7,8 @@ from scrap import load_games, check_config
 from utils import *
 import requests
 
+
+import asyncio
 import imaplib
 import email
 from email.header import decode_header
@@ -24,7 +26,7 @@ intents.message_content = True
 
 bot = discord.Client(intents=intents)
 
-async def get_verification_code():
+def get_verification_code():
     # Connect to Gmail IMAP server
     mail = imaplib.IMAP4_SSL("imap.gmail.com")
 
@@ -84,6 +86,9 @@ async def get_verification_code():
     finally:
         # Close the connection
         mail.logout()
+
+async def fetch_verification_code():
+    return await asyncio.to_thread(get_verification_code)
 
 @bot.event
 async def on_ready():
@@ -178,23 +183,42 @@ async def task():
     await msg.edit(content=team_msg)
 
 if __name__ == "__main__":
-    code = input('Verification Code:')
-    veri_code = get_verification_code()
+    print("Waiting 5 seconds before checking Gmail...")
+    await asyncio.sleep(1)
+    print("4")
+    await asyncio.sleep(1)
+    print("3")
+    await asyncio.sleep(1)
+    print("2")
+    await asyncio.sleep(1)
+    print("1")
+    await asyncio.sleep(1)
+    
+    veri_code = await fetch_verification_code()
     if veri_code:
         print("Verification Code:", veri_code)
     else:
         print("No verification code found.")
     
-    r = requests.post("https://passport.mahjongsoul.com/account/auth_submit",
-        headers = {
-          'Content-Type': 'application/json'
-        },
-        data = f"""{{"account":"{EMAIL}","code":"{code}"}}""",
+    r = requests.post(
+        "https://passport.mahjongsoul.com/account/auth_submit",
+        json={
+            "account": EMAIL,
+            "code": code
+        }
     )
 
-    uid = r.json()["uid"]
-    token = r.json()["token"]
-    print(uid, token)
+    if r.status_code != 200:
+        print("Auth submit failed:", r.text)
+        return
+
+    data = r.json()
+    uid = data.get("uid")
+    token = data.get("token")
+
+    if not uid or not token:
+        print("Missing UID or token.")
+        return
 
     r = requests.post("https://passport.mahjongsoul.com/user/login",
         headers = {
