@@ -183,6 +183,13 @@ async def task():
     await msg.edit(content=team_msg)
 
 async def main():
+    r = requests.post(
+        "https://passport.mahjongsoul.com/account/auth_request",
+        headers = {
+          'Content-Type': 'application/json'
+        },
+        data = f"""{{"account":"{EMAIL}","lang":"en"}}""",
+    )
     print("Waiting 5 seconds before checking Gmail...")
     await asyncio.sleep(1)
     print("4")
