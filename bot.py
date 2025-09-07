@@ -248,7 +248,7 @@ async def main():
     )
 
     config.MS_TOKEN = "Majsoul " + r.json()["data"]["token"]
-    bot.run(config.BOT_TOKEN)
+    await bot.start(config.BOT_TOKEN)
 
 if __name__ == "__main__":
     asyncio.run(main())
