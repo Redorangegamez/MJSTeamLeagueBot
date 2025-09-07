@@ -42,7 +42,6 @@ def get_verification_code():
             None,
             '(FROM "do-not-reply@passport.yo-star.com" SUBJECT "Verification Code")'
         )
-        print(status, messages)
 
         if status == "OK" and messages[0]:
             # Get the most recent email ID
@@ -211,7 +210,7 @@ async def main():
         "https://passport.mahjongsoul.com/account/auth_submit",
         json={
             "account": EMAIL,
-            "code": code
+            "code": veri_code
         }
     )
 
