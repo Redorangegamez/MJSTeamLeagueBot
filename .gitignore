@@ -1,2 +1,4 @@
 .config.py
 *.swp
+.config.py
+*.swp
