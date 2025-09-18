@@ -109,7 +109,6 @@ async def on_ready():
     await clear_channel(task.team_channel)
     await clear_channel(task.sanma_indv_channel)
     await clear_channel(task.sanma_team_channel)
-
     task.indv_msg_ids = []
     for i in range(4):
         msg = await task.indv_channel.send(content="``` \n```")
@@ -125,7 +124,7 @@ async def on_ready():
 
     msg = await task.sanma_team_channel.send(content="``` \n```")
     task.sanma_team_msg_id = msg.id
-
+    
     task.username2name = get_username2name_mapping()
     name2team = get_username2team_mapping()
 
@@ -136,9 +135,7 @@ async def on_ready():
             print(f"Hey {name}, you are not in the team list WTF")
             continue
         task.username2team[username] = name2team[name]
-
     task.all_players = list(task.username2name.keys())
-
     task.start()
 
 @tasks.loop(seconds=config.UPDATE_PERIOD)
@@ -146,14 +143,13 @@ async def task():
     games = load_games(config.TOURN_ID, config.SEASON_ID)
     indv_result = calculate_score(games, task.all_players, task.username2name)
     team_result = calculate_score(games, task.all_players, task.username2team)
-
+    
     indv = format_leaderboard(indv_result)
     # assert len(indv) == 4, f"number of messages don't match for indv leaderboard {len(indv)} != {len(task.indv_msg_ids)}" 
     for i in range(len(indv)):
         msg_id = task.indv_msg_ids[i]
         msg = await task.indv_channel.fetch_message(msg_id)
         await msg.edit(content=indv[i])
-
 
     team = format_leaderboard(team_result)
     assert len(team) == 1, str(len(team))
@@ -190,15 +186,7 @@ async def main():
         data = f"""{{"account":"{EMAIL}","lang":"en"}}""",
     )
     print("Waiting 5 seconds before checking Gmail...")
-    await asyncio.sleep(1)
-    print("4")
-    await asyncio.sleep(1)
-    print("3")
-    await asyncio.sleep(1)
-    print("2")
-    await asyncio.sleep(1)
-    print("1")
-    await asyncio.sleep(1)
+    await asyncio.sleep(5)
     
     veri_code = await fetch_verification_code()
     if veri_code:

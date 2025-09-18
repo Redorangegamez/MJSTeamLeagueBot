@@ -8,8 +8,9 @@ def get_username2name_mapping():
     with open("names.csv", "r") as f:
         f.readline()  # first line column names
         for line in f:
+            if (line.isspace()):
+                break
             _, first_name, last_name, username, _ = line.split(",")
-
             # sanitize
             first_name = first_name.strip()
             last_name = last_name.strip()
@@ -33,6 +34,8 @@ def get_username2team_mapping():
     mp = {}
     with open("teams.csv") as f:
         for line in f:
+            if (line.isspace()):
+                break
             team_name, *members = line.split(",")
             for member in members:
                 member = member.strip()
