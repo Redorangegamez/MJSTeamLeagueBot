@@ -177,6 +177,8 @@ async def task():
     msg = await task.sanma_team_channel.fetch_message(task.sanma_team_msg_id)
     await msg.edit(content=team_msg)
 
+    printPointDifferences()
+
 async def main():
     r = requests.post(
         "https://passport.mahjongsoul.com/account/auth_request",
