@@ -211,6 +211,7 @@ def printPointDifferences(games, all_players):
 
     # sort by total score descending
     result.sort(key=lambda x: x["score"], reverse=True)
+    print(result)
     return result
 
     
