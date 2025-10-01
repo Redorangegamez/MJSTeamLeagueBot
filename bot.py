@@ -157,7 +157,7 @@ async def task():
     msg = await task.team_channel.fetch_message(task.team_msg_id)
     await msg.edit(content=team_msg)
 
-    printPointDifferences(games, task.all_players)
+    # printPointDifferences(games, task.all_players, task.username2name)
 
     # sanma task
 
@@ -178,6 +178,8 @@ async def task():
     team_msg = team[0]
     msg = await task.sanma_team_channel.fetch_message(task.sanma_team_msg_id)
     await msg.edit(content=team_msg)
+
+
 
 async def main():
     r = requests.post(
