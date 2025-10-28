@@ -41,6 +41,7 @@ async def on_ready():
     await clear_channel(leaderboard_loop.team_channel)
     await clear_channel(leaderboard_loop.sanma_indv_channel)
     await clear_channel(leaderboard_loop.sanma_team_channel)
+    await clear_channel(status_loop.channel)
     
     leaderboard_loop.indv_msg_ids = []
     for i in range(4):
