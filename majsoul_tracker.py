@@ -1,4 +1,5 @@
 from majsoul_api import active_players, live_status
+from utils import *
 
 ROUNDS = [
     '東１', '東２', '東３', '東４',
@@ -8,7 +9,7 @@ ROUNDS = [
 
 current_games = []
 sequence = 0
-
+username2name_mapping = get_username2name_mapping()
 
 async def get_status(lobby: int, season: int, players: int):
     """Fetch live game status and update `current_games` list."""
@@ -60,5 +61,8 @@ async def get_readied_players(lobby: int, season: int, players: int):
         return f"# **{players}** Player Lobby\n**Ready (0)**{playing_str}"
 
     ready_players.sort(key=lambda x: x.lower())
-    ready_str = ", ".join(ready_players)
+    new_list = []
+    for i, player in enumerate(players):
+        new_list[i] = f"{player} ({username2name_mapping.get(player, 'Unknown')})"
+    ready_str = ", ".join(new_list)
     return f"# **{players}** Player Lobby\n**Ready ({len(ready_players)}):** {ready_str}{playing_str}"
