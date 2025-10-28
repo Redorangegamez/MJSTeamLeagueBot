@@ -27,8 +27,20 @@ async def return_json(url, method='GET', body=None, headers=None):
         return {'error': str(e)}
 
 
+async def refresh_token():
+    global stored_token
+    print("🔄 Refreshing Mahjong Soul token...")
+    token = await get_token(config.MS_USERNAME, config.MS_PASSWORD)
+    if token:
+        stored_token = token
+        print("✅ Token refreshed:", stored_token)
+        return True
+    print("❌ Failed to refresh token")
+    return False
+    
+
 async def dhs_get(endpoint):
-    return await return_json(
+    res = await return_json(
         f"{API}{endpoint}",
         method='GET',
         headers={
@@ -37,17 +49,30 @@ async def dhs_get(endpoint):
         },
     )
 
+    # If token expired, refresh and retry once
+    if 'error' in res and 'Token expired' in res['error'] and retry:
+        refreshed = await refresh_token()
+        if refreshed:
+            return await dhs_get(endpoint, retry=False)
+    return res
+
 
 async def dhs_post(endpoint, body):
-    return await return_json(
+    res = await return_json(
         f"{API}{endpoint}",
         method='POST',
-        body=body,
         headers={
             'Content-type': 'application/json; charset=UTF-8',
             'Authorization': stored_token,
         },
     )
+
+    # If token expired, refresh and retry once
+    if 'error' in res and 'Token expired' in res['error'] and retry:
+        refreshed = await refresh_token()
+        if refreshed:
+            return await dhs_post(endpoint, retry=False)
+    return res
 
 
 async def get_token(user, password):
