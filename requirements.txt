@@ -1,0 +1,4 @@
+discord.py==2.7.3            # Discord bot library (v2+ for Intents support)
+aiohttp==3.9.5               # Async HTTP requests
+requests==2.31.0             # Sync HTTP requests (for API login)
+python-dotenv==1.0.0
