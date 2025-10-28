@@ -7,22 +7,35 @@ REALTIME_API = 'https://common-202411.maj-soul.com/api/'
 stored_token = ''
 contestPlayers = []
 
-
 async def return_json(url, method='GET', body=None, headers=None):
+    print(f"\n--- Sending {method} request ---")
+    print("URL:", url)
+    print("Headers:", headers)
+    if body:
+        print("Body:", body)
+
     try:
         async with aiohttp.ClientSession() as session:
             if method == 'GET':
                 async with session.get(url, headers=headers) as res:
+                    print("HTTP Status:", res.status)
+                    text = await res.text()
+                    print("Raw response text:", text)
                     res.raise_for_status()
                     data = await res.json()
-            else:
+            else:  # POST
                 async with session.post(url, headers=headers, json=body) as res:
+                    print("HTTP Status:", res.status)
+                    text = await res.text()
+                    print("Raw response text:", text)
                     res.raise_for_status()
                     data = await res.json()
+
+            print("Parsed JSON:", data)
             return data.get('data', data)
+
     except Exception as e:
-        print(url)
-        print(e)
+        print("Request failed:", e)
         return {'error': str(e)}
 
 
