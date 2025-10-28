@@ -22,8 +22,11 @@ async def on_ready():
     global leaderboard_started, status_started
     check_config()
     print(f'We have logged in as {bot.user}')
+
+    # clear all messages in status channel
+    status_loop.channel = bot.get_channel(config.STATUS_CHANNEL_ID)
     
-    # clear all message in channel
+    # clear all message in leaderboard channels
     leaderboard_loop.indv_channel = bot.get_channel(config.INDV_CHANNEL_ID)
     leaderboard_loop.team_channel = bot.get_channel(config.TEAM_CHANNEL_ID)
     leaderboard_loop.sanma_indv_channel = bot.get_channel(config.SANMA_INDV_CHANNEL_ID)
@@ -119,7 +122,6 @@ async def leaderboard_loop():
 async def status_loop():
     global status_message
     try:
-        channel = bot.get_channel(config.STATUS_CHANNEL_ID)
         four_p_content = await get_readied_players(config.TOURN_ID, config.SEASON_ID, 4)
         sanma_content = await get_readied_players(config.SANMA_TOURN_ID, config.SANMA_SEASON_ID, 3)
     
@@ -137,7 +139,7 @@ async def status_loop():
     
         # Send or edit Discord message
         if status_message is None:
-            status_message = await channel.send(content)
+            status_message = await status_loop.channel.send(content)
         else:
             await status_message.edit(content=content)
     except Exception as e:
