@@ -32,7 +32,7 @@ async def return_json(url, method='GET', body=None, headers=None):
                     data = await res.json()
 
             print("Parsed JSON:", data)
-            return data.get('data', {}).get('token')
+            return data.get('data')
 
     except Exception as e:
         print("Request failed:", e)
