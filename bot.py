@@ -77,9 +77,11 @@ async def on_ready():
 
 @tasks.loop(seconds=config.LEADERBOARD_UPDATE_PERIOD)
 async def leaderboard_loop():
+    print('are we in leaderboard_loop')
     games = load_games(config.TOURN_ID, config.SEASON_ID)
-
+    print(games)
     indv_result = calculate_score(games, leaderboard_loop.all_players, leaderboard_loop.username2name)
+    print(indv_result)
     team_result = calculate_score(games, leaderboard_loop.all_players, leaderboard_loop.username2team)
 
     indv = format_leaderboard(indv_result)
@@ -125,6 +127,7 @@ async def status_loop():
     channel = bot.get_channel(config.STATUS_CHANNEL_ID)
     print('status in?')
     four_p_content = await get_readied_players(config.TOURN_ID, config.SEASON_ID)
+    print(four_p_content)
     sanma_content = await get_readied_players(config.SANMA_TOURN_ID, config.SANMA_SEASON_ID)
 
     # If either failed to fetch, skip update to avoid overwriting with blank
