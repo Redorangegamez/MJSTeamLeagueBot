@@ -13,6 +13,7 @@ status_message = None
 
 @bot.event
 async def on_ready():
+    print('do we make it here')
     check_config()
     print(f'We have logged in as {bot.user}')
 
@@ -138,6 +139,7 @@ async def main():
     else:
         print('Could not get token')
         return
+    print('what now?')
     await bot.start(config.BOT_TOKEN)
 
 if __name__ == "__main__":
