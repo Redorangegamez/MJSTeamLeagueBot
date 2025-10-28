@@ -86,7 +86,7 @@ async def task():
     msg = await task.team_channel.fetch_message(task.team_msg_id)
     await msg.edit(content=team_msg)
 
-    print('well we def didn't make it here')
+    print('well we def didnt make it here')
 
     # printPointDifferences(games, task.all_players, task.username2name)
 
