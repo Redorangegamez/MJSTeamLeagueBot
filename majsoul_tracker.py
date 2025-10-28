@@ -33,6 +33,8 @@ async def get_status(lobby: int, season: int, players: int):
             round_str = ROUNDS[(game["round"] * 4) + game["wind"]]
             honba = game["honba"]
             current_games.append(f"　`{round_str}-{honba}` {', '.join(player_list)}")
+    print(current_games)
+    return current_games
 
 
 async def get_readied_players(lobby: int, season: int, players: int):
