@@ -32,7 +32,7 @@ async def return_json(url, method='GET', body=None, headers=None):
                     data = await res.json()
 
             print("Parsed JSON:", data)
-            return data.get('data')
+            return data.get('data', data)
 
     except Exception as e:
         print("Request failed:", e)
@@ -74,8 +74,14 @@ async def get_token(user, password):
         },
         headers={'Content-type': 'application/json; charset=UTF-8'},
     )
-    if 'error' not in res:
-        stored_token = f"Majsoul {res['token']}"
+    token = res.get('token') or res.get('data', {}).get('token')
+    if token:
+        stored_token = f"Majsoul {token}"
+        print("✅ Token fetched:", stored_token)
+        return stored_token
+    else:
+        print("❌ Could not get token:", res)
+        return None
 
 
 async def live_update(uuid):
