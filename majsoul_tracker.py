@@ -59,6 +59,6 @@ async def get_readied_players(lobby: int, season: int, players: int):
         return f"# **{players}** Player Lobby\n**Ready (0)**{playing_str}"
 
     ready_players.sort(key=lambda x: x.lower())
-    ready_players[:] = [f"{player} ({username2name_mapping.get(player, 'Unknown')})" for player in ready_players]
+    ready_players[:] = [f"{username2name_mapping.get(player, 'Unknown')} ({player})" for player in ready_players]
     ready_str = ", ".join(ready_players)
     return f"# **{players}** Player Lobby\n**Ready ({len(ready_players)}):** {ready_str}{playing_str}"
