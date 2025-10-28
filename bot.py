@@ -2,6 +2,7 @@ import asyncio
 import discord
 from discord.ext import tasks
 import config
+import time
 from majsoul_api import get_token
 from majsoul_tracker import get_readied_players
 from scrap import load_games, check_config
@@ -21,8 +22,7 @@ async def on_ready():
     global leaderboard_started, status_started
     check_config()
     print(f'We have logged in as {bot.user}')
-    print(bot.get_channel(config.INDV_CHANNEL_ID))
-
+    
     # clear all message in channel
     task.indv_channel = bot.get_channel(config.INDV_CHANNEL_ID)
     task.team_channel = bot.get_channel(config.TEAM_CHANNEL_ID)
@@ -32,7 +32,7 @@ async def on_ready():
     async def clear_channel(channel):
         async for message in channel.history(limit=100):
             await message.delete()
-            await asyncio.sleep(1)
+            time.sleep(1)
 
     await clear_channel(task.indv_channel)
     await clear_channel(task.team_channel)
