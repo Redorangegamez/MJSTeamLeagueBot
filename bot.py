@@ -4,7 +4,6 @@ from discord.ext import tasks
 import config
 from majsoul_api import get_token
 from majsoul_tracker import get_readied_players
-import time
 from scrap import load_games, check_config
 from utils import *
 
@@ -32,7 +31,7 @@ async def on_ready():
     async def clear_channel(channel):
         async for message in channel.history(limit=100):
             await message.delete()
-            time.sleep(1)
+            await asyncio.sleep(1)
 
     await clear_channel(task.indv_channel)
     await clear_channel(task.team_channel)
