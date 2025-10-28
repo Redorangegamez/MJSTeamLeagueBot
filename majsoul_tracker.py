@@ -14,7 +14,9 @@ async def get_status(lobby: int, season: int, players: int):
     """Fetch live game status and update `current_games` list."""
     global current_games
     players_per_table = players
+    print('here?')
     updates = await live_status(lobby, season)
+    print('omg')
     current_games = []
 
     for game in updates:
