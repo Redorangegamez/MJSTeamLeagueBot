@@ -180,6 +180,8 @@ async def terminate_game(lobby, uuid):
         'game_uuid': uuid,
     })
 
+async def active_players(lobby: int, season: int):
+    return await dhs_get(f"contest/ready_player_list?unique_id={lobby}&season_id={season}")
 
 def decode_id(pid: int) -> int:
     e = pid
