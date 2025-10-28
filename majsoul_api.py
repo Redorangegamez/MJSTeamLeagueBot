@@ -7,27 +7,36 @@ REALTIME_API = 'https://common-202411.maj-soul.com/api/'
 stored_token = ''
 contestPlayers = []
 
-async def get_token(account, password):
-    hashed = hashlib.sha256(password.encode()).hexdigest()
-    body = {
-        "account": account,
-        "password": hashed,
-        "type": 0
-    }
-    headers = {'Content-type': 'application/json; charset=UTF-8'}
+async def return_json(url, method='GET', body=None, headers=None):
+    print(f"\n--- Sending {method} request ---")
+    print("URL:", url)
+    print("Headers:", headers)
+    if body:
+        print("Body:", body)
 
-    res = await return_json("https://contest-gate-202411.maj-soul.com/api/login",
-                            method='POST', body=body, headers=headers)
+    try:
+        async with aiohttp.ClientSession() as session:
+            if method == 'GET':
+                async with session.get(url, headers=headers) as res:
+                    print("HTTP Status:", res.status)
+                    text = await res.text()
+                    print("Raw response text:", text)
+                    res.raise_for_status()
+                    data = await res.json()
+            else:  # POST
+                async with session.post(url, headers=headers, json=body) as res:
+                    print("HTTP Status:", res.status)
+                    text = await res.text()
+                    print("Raw response text:", text)
+                    res.raise_for_status()
+                    data = await res.json()
 
-    token = res.get('data', {}).get('token')
-    if token:
-        global stored_token
-        stored_token = f"Majsoul {token}"
-        print("✅ Token fetched:", stored_token)
-        return stored_token
-    else:
-        print("❌ Could not get token:", res)
-        return None
+            print("Parsed JSON:", data)
+            return data.get('data', {}).get('token')
+
+    except Exception as e:
+        print("Request failed:", e)
+        return {'error': str(e)}
 
 
 async def dhs_get(endpoint):
