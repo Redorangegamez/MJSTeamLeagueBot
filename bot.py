@@ -63,8 +63,10 @@ async def on_ready():
             continue
         task.username2team[username] = name2team[name]
     task.all_players = list(task.username2name.keys())
-    task.start()
-    update_status.start()
+    if not task.is_running():
+        task.start()
+    if not update_status.is_running():
+        update_status.start()
 
 @tasks.loop(seconds=config.LEADERBOARD_UPDATE_PERIOD)
 async def task():
