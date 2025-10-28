@@ -2,7 +2,7 @@ import asyncio
 import discord
 from discord.ext import tasks
 import config
-from majsoul_api import get_token, stored_token
+from majsoul_api import get_token
 from majsoul_tracker import get_readied_players
 
 intents = discord.Intents.default()
@@ -130,9 +130,9 @@ async def update_status():
         await status_message.edit(content=content)
 
 async def main():
-    await get_token(config.MS_USERNAME, config.MS_PASSWORD)
-    print(stored_token)
-    config.MS_TOKEN = stored_token
+    token = await get_token(config.MS_USERNAME, config.MS_PASSWORD)
+    print(token)
+    config.MS_TOKEN = token
     if config.MS_TOKEN:
         print("✅ Logged in to Mahjong Soul API")
         print("Token:", config.MS_TOKEN)
