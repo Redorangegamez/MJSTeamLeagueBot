@@ -108,6 +108,22 @@ async def update_status():
     content = await get_readied_players(config.TOURN_ID, config.SEASON_ID)
     channel = bot.get_channel(config.STATUS_CHANNEL_ID)
 
+    four_p_content = await get_readied_players(config.TOURN_ID, config.SEASON_ID)
+    sanma_content = await get_readied_players(config.SANMA_TOURN_ID, config.SANMA_SEASON_ID)
+
+    # If either failed to fetch, skip update to avoid overwriting with blank
+    if not four_p_content and not sanma_content:
+        print("⚠️ Failed to fetch both lobby statuses.")
+        return
+
+    # Combine outputs neatly
+    content = ""
+    if four_p_content:
+        content += f"## 🀄 4-Player Lobby Status\n{four_p_content}\n\n"
+    if sanma_content:
+        content += f"## 🀄 3-Player (Sanma) Lobby Status\n{sanma_content}"
+
+    # Send or edit Discord message
     if status_message is None:
         status_message = await channel.send(content)
     else:
