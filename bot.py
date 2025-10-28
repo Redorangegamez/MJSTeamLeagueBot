@@ -77,7 +77,7 @@ async def on_ready():
 @tasks.loop(seconds=config.LEADERBOARD_UPDATE_PERIOD)
 async def leaderboard_loop():
     print('are we in leaderboard_loop')
-    games = load_games(config.TOURN_ID, config.SEASON_ID)
+    games = await load_games(config.TOURN_ID, config.SEASON_ID)
     print(games)
     indv_result = calculate_score(games, leaderboard_loop.all_players, leaderboard_loop.username2name)
     print(indv_result)
