@@ -24,50 +24,49 @@ async def on_ready():
     print(f'We have logged in as {bot.user}')
     
     # clear all message in channel
-    task.indv_channel = bot.get_channel(config.INDV_CHANNEL_ID)
-    task.team_channel = bot.get_channel(config.TEAM_CHANNEL_ID)
-    task.sanma_indv_channel = bot.get_channel(config.SANMA_INDV_CHANNEL_ID)
-    task.sanma_team_channel = bot.get_channel(config.SANMA_TEAM_CHANNEL_ID)
-    print('wtf')
+    leaderboard_loop.indv_channel = bot.get_channel(config.INDV_CHANNEL_ID)
+    leaderboard_loop.team_channel = bot.get_channel(config.TEAM_CHANNEL_ID)
+    leaderboard_loop.sanma_indv_channel = bot.get_channel(config.SANMA_INDV_CHANNEL_ID)
+    leaderboard_loop.sanma_team_channel = bot.get_channel(config.SANMA_TEAM_CHANNEL_ID)
+    
     async def clear_channel(channel):
         async for message in channel.history(limit=100):
             await message.delete()
             time.sleep(1)
-    print('we good?')
-    await clear_channel(task.indv_channel)
-    await clear_channel(task.team_channel)
-    await clear_channel(task.sanma_indv_channel)
-    await clear_channel(task.sanma_team_channel)
-    print('i mean we dont make it here anymore')
-    task.indv_msg_ids = []
+
+    await clear_channel(leaderboard_loop.indv_channel)
+    await clear_channel(leaderboard_loop.team_channel)
+    await clear_channel(leaderboard_loop.sanma_indv_channel)
+    await clear_channel(leaderboard_loop.sanma_team_channel)
+    
+    leaderboard_loop.indv_msg_ids = []
     for i in range(4):
-        msg = await task.indv_channel.send(content="``` \n```")
-        task.indv_msg_ids.append(msg.id)
+        msg = await leaderboard_loop.indv_channel.send(content="``` \n```")
+        leaderboard_loop.indv_msg_ids.append(msg.id)
 
-    msg = await task.team_channel.send(content="``` \n```")
-    task.team_msg_id = msg.id
+    msg = await leaderboard_loop.team_channel.send(content="``` \n```")
+    leaderboard_loop.team_msg_id = msg.id
 
-    task.sanma_indv_msg_ids = []
+    leaderboard_loop.sanma_indv_msg_ids = []
     for i in range(4):
-        msg = await task.sanma_indv_channel.send(content="``` \n```")
-        task.sanma_indv_msg_ids.append(msg.id)
+        msg = await leaderboard_loop.sanma_indv_channel.send(content="``` \n```")
+        leaderboard_loop.sanma_indv_msg_ids.append(msg.id)
 
-    msg = await task.sanma_team_channel.send(content="``` \n```")
-    task.sanma_team_msg_id = msg.id
+    msg = await leaderboard_loop.sanma_team_channel.send(content="``` \n```")
+    leaderboard_loop.sanma_team_msg_id = msg.id
 
-    task.username2name = get_username2name_mapping()
+    leaderboard_loop.username2name = get_username2name_mapping()
     name2team = get_username2team_mapping()
 
-    task.username2team = {}
+    leaderboard_loop.username2team = {}
 
-    for username, name in task.username2name.items():
+    for username, name in leaderboard_loop.username2name.items():
         if name not in name2team:
             print(f"Hey {name}, you are not in the team list WTF")
             continue
-        task.username2team[username] = name2team[name]
-    task.all_players = list(task.username2name.keys())
-    print(leaderboard_started)
-    print('wtf')
+        leaderboard_loop.username2team[username] = name2team[name]
+    leaderboard_loop.all_players = list(leaderboard_loop.username2name.keys())
+
     if not leaderboard_started:
         print('help')
         leaderboard_loop.start()
@@ -78,47 +77,46 @@ async def on_ready():
 
 @tasks.loop(seconds=config.LEADERBOARD_UPDATE_PERIOD)
 async def leaderboard_loop():
-    print('are we in task')
     games = load_games(config.TOURN_ID, config.SEASON_ID)
-    print('task2')
-    indv_result = calculate_score(games, task.all_players, task.username2name)
-    team_result = calculate_score(games, task.all_players, task.username2team)
-    print('task3')
+
+    indv_result = calculate_score(games, leaderboard_loop.all_players, leaderboard_loop.username2name)
+    team_result = calculate_score(games, leaderboard_loop.all_players, leaderboard_loop.username2team)
+
     indv = format_leaderboard(indv_result)
     # assert len(indv) == 4, f"number of messages don't match for indv leaderboard {len(indv)} != {len(task.indv_msg_ids)}" 
     for i in range(len(indv)):
-        msg_id = task.indv_msg_ids[i]
-        msg = await task.indv_channel.fetch_message(msg_id)
+        msg_id = leaderboard_loop.indv_msg_ids[i]
+        msg = await leaderboard_loop.indv_channel.fetch_message(msg_id)
         await msg.edit(content=indv[i])
 
     team = format_leaderboard(team_result)
     assert len(team) == 1, str(len(team))
     team_msg = team[0]
-    msg = await task.team_channel.fetch_message(task.team_msg_id)
+    msg = await leaderboard_loop.team_channel.fetch_message(leaderboard_loop.team_msg_id)
     await msg.edit(content=team_msg)
 
     print('well we def didnt make it here')
 
-    # printPointDifferences(games, task.all_players, task.username2name)
+    # printPointDifferences(games, leaderboard_loop.all_players, leaderboard_loop.username2name)
 
     # sanma task
 
     games = load_games(config.SANMA_TOURN_ID, config.SANMA_SEASON_ID)
-    indv_result = calculate_score(games, task.all_players, task.username2name)
-    team_result = calculate_score(games, task.all_players, task.username2team)
+    indv_result = calculate_score(games, leaderboard_loop.all_players, leaderboard_loop.username2name)
+    team_result = calculate_score(games, leaderboard_loop.all_players, leaderboard_loop.username2team)
 
     indv = format_leaderboard(indv_result)
-    # assert len(indv) == 4, f"number of messages don't match for indv leaderboard {len(indv)} != {len(task.indv_msg_ids)}" 
+    # assert len(indv) == 4, f"number of messages don't match for indv leaderboard {len(indv)} != {len(leaderboard_loop.indv_msg_ids)}" 
     for i in range(len(indv)):
-        msg_id = task.sanma_indv_msg_ids[i]
-        msg = await task.sanma_indv_channel.fetch_message(msg_id)
+        msg_id = leaderboard_loop.sanma_indv_msg_ids[i]
+        msg = await leaderboard_loop.sanma_indv_channel.fetch_message(msg_id)
         await msg.edit(content=indv[i])
 
 
     team = format_leaderboard(team_result)
     assert len(team) == 1, str(len(team))
     team_msg = team[0]
-    msg = await task.sanma_team_channel.fetch_message(task.sanma_team_msg_id)
+    msg = await leaderboard_loop.sanma_team_channel.fetch_message(leaderboard_loop.sanma_team_msg_id)
     await msg.edit(content=team_msg)
 
 @tasks.loop(seconds=config.STATUS_UPDATE_PERIOD)
