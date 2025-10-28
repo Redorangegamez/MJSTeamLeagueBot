@@ -16,7 +16,6 @@ status_message = None
 
 @bot.event
 async def on_ready():
-    print('do we make it here')
     check_config()
     print(f'We have logged in as {bot.user}')
 
@@ -50,9 +49,11 @@ async def on_ready():
 
     msg = await task.sanma_team_channel.send(content="``` \n```")
     task.sanma_team_msg_id = msg.id
-    
+
+    print('wtf')
     task.username2name = get_username2name_mapping()
     name2team = get_username2team_mapping()
+    print('what about me')
 
     task.username2team = {}
 
@@ -67,6 +68,7 @@ async def on_ready():
 
 @tasks.loop(seconds=config.LEADERBOARD_UPDATE_PERIOD)
 async def task():
+    print('are we in task')
     games = load_games(config.TOURN_ID, config.SEASON_ID)
     indv_result = calculate_score(games, task.all_players, task.username2name)
     team_result = calculate_score(games, task.all_players, task.username2team)
@@ -83,6 +85,8 @@ async def task():
     team_msg = team[0]
     msg = await task.team_channel.fetch_message(task.team_msg_id)
     await msg.edit(content=team_msg)
+
+    print('well we def didn't make it here')
 
     # printPointDifferences(games, task.all_players, task.username2name)
 
@@ -142,7 +146,6 @@ async def main():
     else:
         print('Could not get token')
         return
-    print('what now?')
     await bot.start(config.BOT_TOKEN)
 
 if __name__ == "__main__":
