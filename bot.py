@@ -1,6 +1,6 @@
 import asyncio
 import discord
-from discord.ext import tasks
+from discord.ext import tasks, commands
 import config
 import time
 from majsoul_api import *
@@ -10,12 +10,49 @@ from utils import *
 
 intents = discord.Intents.default()
 intents.message_content = True
-bot = discord.Client(intents=intents)
+bot = commands.Bot(command_prefix='!', intents=intents)
 
 status_message = None
 
 leaderboard_started = False
 status_started = False
+
+@bot.command()
+async def pause(ctx, nickname: str):
+    """Pause a running game by player nickname in default lobby."""
+    try:
+        lobby = config.TOURN_ID  # or SANMA_TOURN_ID depending on type
+        game_uuid = await find_player_game(lobby, config.SEASON_ID, nickname)
+        if not game_uuid:
+            await ctx.send(f"⚠️ No active game found for player {nickname}.")
+            return
+
+        res = await pause_game(lobby, game_uuid)
+        if res.get("error"):
+            await ctx.send(f"⚠️ Failed to pause game: {res['error']}")
+        else:
+            await ctx.send(f"✅ Game for {nickname} paused successfully.")
+    except Exception as e:
+        await ctx.send(f"❌ Exception occurred: {e}")
+
+
+@bot.command()
+async def resume(ctx, nickname: str):
+    """Resume a paused game by player nickname in default lobby."""
+    try:
+        lobby = config.TOURN_ID
+        game_uuid = await find_player_game(lobby, config.SEASON_ID, nickname)
+        if not game_uuid:
+            await ctx.send(f"⚠️ No active game found for player {nickname}.")
+            return
+
+        res = await resume_game(lobby, game_uuid)
+        if res.get("error"):
+            await ctx.send(f"⚠️ Failed to resume game: {res['error']}")
+        else:
+            await ctx.send(f"✅ Game for {nickname} resumed successfully.")
+    except Exception as e:
+        await ctx.send(f"❌ Exception occurred: {e}")
 
 @bot.event
 async def on_ready():
