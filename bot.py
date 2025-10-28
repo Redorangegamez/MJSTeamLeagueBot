@@ -5,6 +5,7 @@ import config
 import time
 from majsoul_api import *
 from majsoul_tracker import get_readied_players
+from scrap import check_config
 from utils import *
 
 intents = discord.Intents.default()
