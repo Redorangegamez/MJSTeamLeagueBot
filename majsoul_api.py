@@ -208,6 +208,39 @@ async def live_status(lobby: int, season: int):
     return status
 
 
+async def load_games_offset(tourn_id, season_id, offset, limit=100):
+    """Fetch a batch of games from the contest-gate API using GET."""
+    endpoint = (
+        f"contest/fetch_contest_game_records?"
+        f"unique_id={tourn_id}&season_id={season_id}&offset={offset}&limit={limit}"
+    )
+    data = await dhs_get(endpoint)
+
+    # Make sure the response has the record list
+    if not data or "record_list" not in data:
+        print(f"⚠️ Unexpected response for load_games_offset: {data}")
+        return []
+
+    return data["record_list"]
+
+
+async def load_games(tourn_id, season_id):
+    """Fetch all games for a tournament/season, handling pagination."""
+    games = []
+    offset = 0
+    step = 100
+
+    while True:
+        batch = await load_games_offset(tourn_id, season_id, offset, limit=step)
+        if not batch:
+            break
+
+        games.extend(batch)
+        offset += len(batch)
+
+    return games
+
+
 def decode_id(pid: int) -> int:
     e = pid
     e -= 10_000_000
