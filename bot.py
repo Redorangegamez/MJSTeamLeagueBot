@@ -136,7 +136,7 @@ async def main():
         print("✅ Logged in to Mahjong Soul API")
         print("Token:", config.MS_TOKEN)
     else:
-        print('Couldn't get token')
+        print('Could not get token')
         return
     await bot.start(config.BOT_TOKEN)
 
