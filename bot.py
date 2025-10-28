@@ -21,6 +21,7 @@ async def on_ready():
     global leaderboard_started, status_started
     check_config()
     print(f'We have logged in as {bot.user}')
+    print(bot.get_channel(config.INDV_CHANNEL_ID))
 
     # clear all message in channel
     task.indv_channel = bot.get_channel(config.INDV_CHANNEL_ID)
