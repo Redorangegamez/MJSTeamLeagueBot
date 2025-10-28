@@ -120,9 +120,9 @@ async def status_loop():
     global status_message
     channel = bot.get_channel(config.STATUS_CHANNEL_ID)
     print('status in?')
-    four_p_content = await get_readied_players(config.TOURN_ID, config.SEASON_ID)
+    four_p_content = await get_readied_players(config.TOURN_ID, config.SEASON_ID, 4)
     print(four_p_content)
-    sanma_content = await get_readied_players(config.SANMA_TOURN_ID, config.SANMA_SEASON_ID)
+    sanma_content = await get_readied_players(config.SANMA_TOURN_ID, config.SANMA_SEASON_ID, 3)
 
     # If either failed to fetch, skip update to avoid overwriting with blank
     if not four_p_content and not sanma_content:
