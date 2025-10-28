@@ -13,12 +13,12 @@ bot = discord.Client(intents=intents)
 
 status_message = None
 
-leaderboard_loop_started = False
-status_loop_started = False
+leaderboard_started = False
+status_started = False
 
 @bot.event
 async def on_ready():
-    global task_started, status_started
+    global leaderboard_started, status_started
     check_config()
     print(f'We have logged in as {bot.user}')
 
@@ -64,13 +64,12 @@ async def on_ready():
             continue
         task.username2team[username] = name2team[name]
     task.all_players = list(task.username2name.keys())
-    if not leaderboard_loop_started:
-        print('help')
+    if not leaderboard_started:
         leaderboard_loop.start()
-        leaderboard_loop_started = True
-    if not status_loop_started:
+        leaderboard_started = True
+    if not status_started:
         status_loop.start()
-        status_loop_started = True
+        status_started = True
 
 @tasks.loop(seconds=config.LEADERBOARD_UPDATE_PERIOD)
 async def leaderboard_loop():
