@@ -15,7 +15,6 @@ status_message = None
 async def on_ready():
     check_config()
     print(f'We have logged in as {bot.user}')
-    update_status.start()
 
     # clear all message in channel
     task.indv_channel = bot.get_channel(config.INDV_CHANNEL_ID)
@@ -60,6 +59,7 @@ async def on_ready():
         task.username2team[username] = name2team[name]
     task.all_players = list(task.username2name.keys())
     task.start()
+    update_status.start()
 
 @tasks.loop(seconds=config.LEADERBOARD_UPDATE_PERIOD)
 async def task():
