@@ -62,7 +62,7 @@ async def get_readied_players(lobby: int, season: int, players: int):
 
     ready_players.sort(key=lambda x: x.lower())
     new_list = []
-    for i, player in enumerate(players):
+    for i, player in enumerate(ready_players):
         new_list[i] = f"{player} ({username2name_mapping.get(player, 'Unknown')})"
     ready_str = ", ".join(new_list)
     return f"# **{players}** Player Lobby\n**Ready ({len(ready_players)}):** {ready_str}{playing_str}"
