@@ -23,10 +23,10 @@ async def on_ready():
     print(f'We have logged in as {bot.user}')
 
     # clear all message in channel
-    task.indv_channel = await bot.get_channel(config.INDV_CHANNEL_ID)
-    task.team_channel = await bot.get_channel(config.TEAM_CHANNEL_ID)
-    task.sanma_indv_channel = await bot.get_channel(config.SANMA_INDV_CHANNEL_ID)
-    task.sanma_team_channel = await bot.get_channel(config.SANMA_TEAM_CHANNEL_ID)
+    task.indv_channel = bot.get_channel(config.INDV_CHANNEL_ID)
+    task.team_channel = bot.get_channel(config.TEAM_CHANNEL_ID)
+    task.sanma_indv_channel = bot.get_channel(config.SANMA_INDV_CHANNEL_ID)
+    task.sanma_team_channel = bot.get_channel(config.SANMA_TEAM_CHANNEL_ID)
 
     async def clear_channel(channel):
         async for message in channel.history(limit=100):
