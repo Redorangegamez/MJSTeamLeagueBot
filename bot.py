@@ -14,8 +14,8 @@ bot = discord.Client(intents=intents)
 
 status_message = None
 
-task_started = False
-status_started = False
+leaderboard_loop_started = False
+status_loop_started = False
 
 @bot.event
 async def on_ready():
@@ -65,15 +65,15 @@ async def on_ready():
             continue
         task.username2team[username] = name2team[name]
     task.all_players = list(task.username2name.keys())
-    if not task_started:
-        task.start()
-        task_started = True
-    if not status_started:
-        update_status.start()
-        status_started = True
+    if not leaderboard_loop_started:
+        leaderboard_loop.start()
+        leaderboard_loop_started = True
+    if not status_loop_started:
+        status_loop.start()
+        status_loop_started = True
 
 @tasks.loop(seconds=config.LEADERBOARD_UPDATE_PERIOD)
-async def task():
+async def leaderboard_loop():
     print('are we in task')
     games = load_games(config.TOURN_ID, config.SEASON_ID)
     print('task2')
@@ -118,7 +118,7 @@ async def task():
     await msg.edit(content=team_msg)
 
 @tasks.loop(seconds=config.STATUS_UPDATE_PERIOD)
-async def update_status():
+async def status_loop():
     global status_message
     channel = bot.get_channel(config.STATUS_CHANNEL_ID)
     print('status in?')
