@@ -8,30 +8,18 @@ stored_token = ''
 contestPlayers = []
 
 async def return_json(url, method='GET', body=None, headers=None):
-    print(f"\n--- Sending {method} request ---")
-    print("URL:", url)
-    print("Headers:", headers)
-    if body:
-        print("Body:", body)
-
     try:
         async with aiohttp.ClientSession() as session:
             if method == 'GET':
                 async with session.get(url, headers=headers) as res:
-                    print("HTTP Status:", res.status)
                     text = await res.text()
-                    print("Raw response text:", text)
                     res.raise_for_status()
                     data = await res.json()
             else:  # POST
                 async with session.post(url, headers=headers, json=body) as res:
-                    print("HTTP Status:", res.status)
                     text = await res.text()
-                    print("Raw response text:", text)
                     res.raise_for_status()
                     data = await res.json()
-
-            print("Parsed JSON:", data)
             return data.get('data', data)
 
     except Exception as e:
@@ -77,10 +65,8 @@ async def get_token(user, password):
     token = res.get('token') or res.get('data', {}).get('token')
     if token:
         stored_token = f"Majsoul {token}"
-        print("✅ Token fetched:", stored_token)
         return stored_token
     else:
-        print("❌ Could not get token:", res)
         return None
 
 
