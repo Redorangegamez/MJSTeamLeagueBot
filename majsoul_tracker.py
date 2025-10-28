@@ -6,22 +6,14 @@ ROUNDS = [
     '西１', '西２', '西３', '西４',
 ]
 
-CONFIG = {
-    "lastgame": "250916-d9cefa23-73a6-469b-889e-2b19966ffa8b",
-    "room": 881636,
-    "lobby": 48992072,
-    "season": 3,
-    "players": 4
-}
-
 current_games = []
 sequence = 0
 
 
-async def get_status(lobby: int, season: int):
+async def get_status(lobby: int, season: int, players: int):
     """Fetch live game status and update `current_games` list."""
     global current_games
-    players_per_table = CONFIG["players"]
+    players_per_table = players
     updates = await live_status(lobby, season)
     current_games = []
 
@@ -41,7 +33,7 @@ async def get_status(lobby: int, season: int):
             current_games.append(f"　`{round_str}-{honba}` {', '.join(player_list)}")
 
 
-async def get_readied_players(lobby: int, season: int):
+async def get_readied_players(lobby: int, season: int, players: int):
     """Fetch ready players and optionally refresh live status."""
     global sequence
     res = await active_players(lobby, season)
@@ -55,14 +47,14 @@ async def get_readied_players(lobby: int, season: int):
 
     playing_str = ""
     if current_games:
-        player_count = len(current_games) * CONFIG["players"]
+        player_count = len(current_games) * players
         playing_str = "\n**Playing ({}):**\n{}".format(
             player_count, "\n".join(current_games)
         )
 
     if not ready_players:
-        return f"# **{CONFIG['room']}**\n**Ready (0)**{playing_str}"
+        return f"# **{players}** Player Lobby\n**Ready (0)**{playing_str}"
 
     ready_players.sort(key=lambda x: x.lower())
     ready_str = ", ".join(ready_players)
-    return f"# **{CONFIG['room']}**\n**Ready ({len(ready_players)}):** {ready_str}{playing_str}"
+    return f"# **{players}** Player Lobby\n**Ready ({len(ready_players)}):** {ready_str}{playing_str}"
