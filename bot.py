@@ -3,9 +3,8 @@ import discord
 from discord.ext import tasks
 import config
 import time
-from majsoul_api import get_token
+from majsoul_api import *
 from majsoul_tracker import get_readied_players
-from scrap import load_games, check_config
 from utils import *
 
 intents = discord.Intents.default()
