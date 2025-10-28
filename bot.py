@@ -76,11 +76,8 @@ async def on_ready():
 
 @tasks.loop(seconds=config.LEADERBOARD_UPDATE_PERIOD)
 async def leaderboard_loop():
-    print('are we in leaderboard_loop')
     games = await load_games(config.TOURN_ID, config.SEASON_ID)
-    print(games)
     indv_result = calculate_score(games, leaderboard_loop.all_players, leaderboard_loop.username2name)
-    print(indv_result)
     team_result = calculate_score(games, leaderboard_loop.all_players, leaderboard_loop.username2team)
 
     indv = format_leaderboard(indv_result)
@@ -96,13 +93,11 @@ async def leaderboard_loop():
     msg = await leaderboard_loop.team_channel.fetch_message(leaderboard_loop.team_msg_id)
     await msg.edit(content=team_msg)
 
-    print('well we def didnt make it here')
-
     # printPointDifferences(games, leaderboard_loop.all_players, leaderboard_loop.username2name)
 
     # sanma task
 
-    games = load_games(config.SANMA_TOURN_ID, config.SANMA_SEASON_ID)
+    games = await load_games(config.SANMA_TOURN_ID, config.SANMA_SEASON_ID)
     indv_result = calculate_score(games, leaderboard_loop.all_players, leaderboard_loop.username2name)
     team_result = calculate_score(games, leaderboard_loop.all_players, leaderboard_loop.username2team)
 
