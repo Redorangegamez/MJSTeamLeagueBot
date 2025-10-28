@@ -3,7 +3,7 @@ import discord
 from discord.ext import tasks
 import config
 from majsoul_api import get_token, stored_token
-from majsoul_tracker import get_readied_players, CONFIG
+from majsoul_tracker import get_readied_players
 
 intents = discord.Intents.default()
 intents.message_content = True
