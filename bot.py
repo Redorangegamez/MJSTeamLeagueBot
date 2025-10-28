@@ -25,7 +25,7 @@ async def on_ready():
     async def clear_channel(channel):
         async for message in channel.history(limit=100):
             await message.delete()
-            time.sleep(1)
+            await asyncio.sleep(1)
 
     await clear_channel(task.indv_channel)
     await clear_channel(task.team_channel)
@@ -105,7 +105,6 @@ async def task():
 @tasks.loop(seconds=config.STATUS_UPDATE_PERIOD)
 async def update_status():
     global status_message
-    content = await get_readied_players(config.TOURN_ID, config.SEASON_ID)
     channel = bot.get_channel(config.STATUS_CHANNEL_ID)
 
     four_p_content = await get_readied_players(config.TOURN_ID, config.SEASON_ID)
