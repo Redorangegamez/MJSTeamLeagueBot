@@ -2,7 +2,7 @@ import asyncio
 import discord
 from discord.ext import tasks
 import config
-from maj_soul_api import get_token, stored_token
+from majsoul_api import get_token, stored_token
 from majsoul_tracker import get_readied_players, CONFIG
 
 intents = discord.Intents.default()
