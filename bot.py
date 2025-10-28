@@ -132,8 +132,12 @@ async def update_status():
 async def main():
     await get_token(config.MS_USERNAME, config.MS_PASSWORD)
     config.MS_TOKEN = stored_token
-    print("✅ Logged in to Mahjong Soul API")
-    print("Token:", config.MS_TOKEN)
+    if config.MS_TOKEN:
+        print("✅ Logged in to Mahjong Soul API")
+        print("Token:", config.MS_TOKEN)
+    else:
+        print('Couldn't get token')
+        return
     await bot.start(config.BOT_TOKEN)
 
 if __name__ == "__main__":
