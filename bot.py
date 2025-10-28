@@ -64,6 +64,8 @@ async def on_ready():
             continue
         task.username2team[username] = name2team[name]
     task.all_players = list(task.username2name.keys())
+    print(leaderboard_started)
+    print('wtf')
     if not leaderboard_started:
         print('help')
         leaderboard_loop.start()
