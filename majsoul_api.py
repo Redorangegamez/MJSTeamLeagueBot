@@ -180,8 +180,28 @@ async def terminate_game(lobby, uuid):
         'game_uuid': uuid,
     })
 
+
 async def active_players(lobby: int, season: int):
     return await dhs_get(f"contest/ready_player_list?unique_id={lobby}&season_id={season}")
+
+
+async def live_status(lobby: int, season: int):
+    status = []
+    games = await active_games(lobby, season)
+
+    for g in games:
+        s = await live_update(g["game_uuid"])
+        if s.get("uuid"):
+            g["round"] = s.get("chang")   # current round
+            g["wind"] = s.get("ju")      # current wind
+            g["honba"] = s.get("ben")    # current honba
+            scores = s.get("scores", [])
+            for i, score in enumerate(scores):
+                g["players"][i]["score"] = score
+        status.append(g)
+
+    return status
+
 
 def decode_id(pid: int) -> int:
     e = pid
