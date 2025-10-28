@@ -16,7 +16,6 @@ async def get_status(lobby: int, season: int, players: int):
     global current_games
     players_per_table = players
     updates = await live_status(lobby, season)
-    print(updates)
     current_games = []
 
     for game in updates:
