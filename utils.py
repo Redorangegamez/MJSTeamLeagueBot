@@ -150,11 +150,24 @@ def format_leaderboard(lines):
     message = ["```\n" + s + "\n```\n"for s in message]
     return message
 
-def printPointDifferences(games, all_players):
+def printPointDifferences(games, all_players, name_mapping=None):
     n_player = len(games[0]["accounts"])  # sanma (3) or yonma (4)
 
-    total_score = {player: 0 for player in all_players}
+    total_score = {}
     pairwise_diff = defaultdict(lambda: defaultdict(int))  # cumulative score differences
+
+    name2score = {}
+    name2rank  = {}
+
+    for player in all_players:
+        if name_mapping is not None:
+            if player not in name_mapping:
+                continue
+            player = name_mapping[player]
+            total_score[player] = 0
+
+    name2score[player] = 0
+    name2rank[player]  = [0] * n_player
 
     for game in games:
         if game.get("removed", 0) == 1:
@@ -174,43 +187,51 @@ def printPointDifferences(games, all_players):
         uma = {3: config.sanma_uma[:], 4: config.uma[:]}[n_player]
 
         seat_delta = {}
+        
         for rank, score in enumerate(scores):
             seat = score["seat"]
             delta = (score["part_point_1"] - starting_score) // 100 + uma[rank] * 10
             name = players[seat]
-            if name is None:
+            if name is None or name not in total_score:
+                continue
+            if name not in total_score:
                 continue
             total_score[name] += delta
             seat_delta[seat] = delta
-
         # pairwise differences
         for i in range(n_player):
             name_i = players[i]
-            if name_i is None:
+            if name_i is None or name_i not in total_score:
                 continue
             for j in range(n_player):
                 if i == j:
                     continue
                 name_j = players[j]
-                if name_j is None:
+                if name_j is None or name_j not in total_score:
                     continue
                 pairwise_diff[name_i][name_j] += seat_delta[i] - seat_delta[j]
-
-    # build result with best/worst opponents
     result = []
     for name in total_score:
         opponents = pairwise_diff[name]
-        best = max(opponents.items(), key=lambda x: x[1])[0] if opponents else None
-        worst = min(opponents.items(), key=lambda x: x[1])[0] if opponents else None
+        if opponents:
+            best, best_delta = max(opponents.items(), key=lambda x: x[1])
+            worst, worst_delta = min(opponents.items(), key=lambda x: x[1])
+        else:
+            best, best_delta = None, None
+            worst, worst_delta = None, None
+
         result.append({
             "name": name,
             "score": total_score[name],
             "best_opponent": best,
-            "worst_opponent": worst
+            "best_delta": best_delta,
+            "worst_opponent": worst,
+            "worst_delta": worst_delta
         })
 
     # sort by total score descending
     result.sort(key=lambda x: x["score"], reverse=True)
+    print(pairwise_diff)
     print(result)
     return result
 
