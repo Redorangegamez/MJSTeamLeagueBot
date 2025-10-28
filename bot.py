@@ -14,8 +14,12 @@ bot = discord.Client(intents=intents)
 
 status_message = None
 
+task_started = False
+status_started = False
+
 @bot.event
 async def on_ready():
+    global task_started, status_started
     check_config()
     print(f'We have logged in as {bot.user}')
 
@@ -50,10 +54,8 @@ async def on_ready():
     msg = await task.sanma_team_channel.send(content="``` \n```")
     task.sanma_team_msg_id = msg.id
 
-    print('wtf')
     task.username2name = get_username2name_mapping()
     name2team = get_username2team_mapping()
-    print('what about me')
 
     task.username2team = {}
 
@@ -63,10 +65,12 @@ async def on_ready():
             continue
         task.username2team[username] = name2team[name]
     task.all_players = list(task.username2name.keys())
-    if not task.is_running():
+    if not task_started:
         task.start()
-    if not update_status.is_running():
+        task_started = True
+    if not status_started:
         update_status.start()
+        status_started = True
 
 @tasks.loop(seconds=config.LEADERBOARD_UPDATE_PERIOD)
 async def task():
