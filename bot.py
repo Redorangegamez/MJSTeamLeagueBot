@@ -131,6 +131,7 @@ async def update_status():
 
 async def main():
     await get_token(config.MS_USERNAME, config.MS_PASSWORD)
+    print(stored_token)
     config.MS_TOKEN = stored_token
     if config.MS_TOKEN:
         print("✅ Logged in to Mahjong Soul API")
