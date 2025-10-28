@@ -72,9 +72,10 @@ async def on_ready():
 async def task():
     print('are we in task')
     games = load_games(config.TOURN_ID, config.SEASON_ID)
+    print('task2')
     indv_result = calculate_score(games, task.all_players, task.username2name)
     team_result = calculate_score(games, task.all_players, task.username2team)
-    
+    print('task3')
     indv = format_leaderboard(indv_result)
     # assert len(indv) == 4, f"number of messages don't match for indv leaderboard {len(indv)} != {len(task.indv_msg_ids)}" 
     for i in range(len(indv)):
@@ -116,7 +117,7 @@ async def task():
 async def update_status():
     global status_message
     channel = bot.get_channel(config.STATUS_CHANNEL_ID)
-
+    print('status in?')
     four_p_content = await get_readied_players(config.TOURN_ID, config.SEASON_ID)
     sanma_content = await get_readied_players(config.SANMA_TOURN_ID, config.SANMA_SEASON_ID)
 
