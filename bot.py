@@ -28,16 +28,17 @@ async def on_ready():
     task.team_channel = bot.get_channel(config.TEAM_CHANNEL_ID)
     task.sanma_indv_channel = bot.get_channel(config.SANMA_INDV_CHANNEL_ID)
     task.sanma_team_channel = bot.get_channel(config.SANMA_TEAM_CHANNEL_ID)
-
+    print('wtf')
     async def clear_channel(channel):
         async for message in channel.history(limit=100):
             await message.delete()
             time.sleep(1)
-
+    print('we good?')
     await clear_channel(task.indv_channel)
     await clear_channel(task.team_channel)
     await clear_channel(task.sanma_indv_channel)
     await clear_channel(task.sanma_team_channel)
+    print('i mean we dont make it here anymore')
     task.indv_msg_ids = []
     for i in range(4):
         msg = await task.indv_channel.send(content="``` \n```")
