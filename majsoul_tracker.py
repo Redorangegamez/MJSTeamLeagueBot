@@ -47,7 +47,7 @@ async def get_readied_players(lobby: int, season: int, players: int):
     ready_players = [p["nickname"] for p in res if p.get("nickname")]
     sequence += 1
     if sequence % 4 == 0:
-        await get_status(lobby, season)
+        await get_status(lobby, season, players)
 
     playing_str = ""
     if current_games:
