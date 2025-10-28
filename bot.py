@@ -68,7 +68,6 @@ async def on_ready():
     leaderboard_loop.all_players = list(leaderboard_loop.username2name.keys())
 
     if not leaderboard_started:
-        print('help')
         leaderboard_loop.start()
         leaderboard_started = True
     if not status_started:
