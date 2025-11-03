@@ -122,11 +122,11 @@ async def leaderboard_loop():
     team_result = calculate_score(games, leaderboard_loop.all_players, leaderboard_loop.username2team)
 
     indv = format_leaderboard(indv_result)
-    # assert len(indv) == 4, f"number of messages don't match for indv leaderboard {len(indv)} != {len(task.indv_msg_ids)}" 
     for i in range(len(indv)):
         msg_id = leaderboard_loop.indv_msg_ids[i]
         msg = await leaderboard_loop.indv_channel.fetch_message(msg_id)
         await msg.edit(content=indv[i])
+        print(msg)
     print(team_result)
     team = format_leaderboard(team_result)
     print(team)
