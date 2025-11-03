@@ -120,6 +120,7 @@ async def leaderboard_loop():
     games = await load_games(config.TOURN_ID, config.SEASON_ID)
     indv_result = calculate_score(games, leaderboard_loop.all_players, leaderboard_loop.username2name)
     team_result = calculate_score(games, leaderboard_loop.all_players, leaderboard_loop.username2team)
+    print(team_result)
 
     indv = format_leaderboard(indv_result)
     # assert len(indv) == 4, f"number of messages don't match for indv leaderboard {len(indv)} != {len(task.indv_msg_ids)}" 
