@@ -127,7 +127,7 @@ async def leaderboard_loop():
         msg_id = leaderboard_loop.indv_msg_ids[i]
         msg = await leaderboard_loop.indv_channel.fetch_message(msg_id)
         await msg.edit(content=indv[i])
-
+    print(team_result)
     team = format_leaderboard(team_result)
     print(team)
     print(team[0])
