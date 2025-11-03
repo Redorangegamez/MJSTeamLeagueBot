@@ -81,7 +81,7 @@ async def on_ready():
     await clear_channel(status_loop.channel)
     
     leaderboard_loop.indv_msg_ids = []
-    for i in range(4):
+    for i in range(5):
         msg = await leaderboard_loop.indv_channel.send(content="``` \n```")
         leaderboard_loop.indv_msg_ids.append(msg.id)
 
@@ -122,17 +122,12 @@ async def leaderboard_loop():
     team_result = calculate_score(games, leaderboard_loop.all_players, leaderboard_loop.username2team)
 
     indv = format_leaderboard(indv_result)
-    print(indv)
     for i in range(len(indv)):
         msg_id = leaderboard_loop.indv_msg_ids[i]
-        print(indv[i])
         msg = await leaderboard_loop.indv_channel.fetch_message(msg_id)
         await msg.edit(content=indv[i])
-        print(msg)
-    print(team_result)
+
     team = format_leaderboard(team_result)
-    print(team)
-    print(team[0])
     assert len(team) == 1, str(len(team))
     team_msg = team[0]
     msg = await leaderboard_loop.team_channel.fetch_message(leaderboard_loop.team_msg_id)
