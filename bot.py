@@ -89,7 +89,7 @@ async def on_ready():
     leaderboard_loop.team_msg_id = msg.id
 
     leaderboard_loop.sanma_indv_msg_ids = []
-    for i in range(4):
+    for i in range(5):
         msg = await leaderboard_loop.sanma_indv_channel.send(content="``` \n```")
         leaderboard_loop.sanma_indv_msg_ids.append(msg.id)
 
