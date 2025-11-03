@@ -122,8 +122,10 @@ async def leaderboard_loop():
     team_result = calculate_score(games, leaderboard_loop.all_players, leaderboard_loop.username2team)
 
     indv = format_leaderboard(indv_result)
+    print(indv)
     for i in range(len(indv)):
         msg_id = leaderboard_loop.indv_msg_ids[i]
+        print(indv[i])
         msg = await leaderboard_loop.indv_channel.fetch_message(msg_id)
         await msg.edit(content=indv[i])
         print(msg)
