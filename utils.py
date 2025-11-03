@@ -121,6 +121,8 @@ def calculate_score(games, all_players, name_mapping=None):
     return lines
 
 def format_leaderboard(lines):
+    print(lines)
+    print('next1')
 
     assert len(lines) > 0, "no lines wtf"
     n_player = len(lines[0][2])
@@ -142,12 +144,14 @@ def format_leaderboard(lines):
             message += f"{i:<4}{score:<8}{rank[0]:<4}{rank[1]:<4}{rank[2]:<4}{name}\n"
         else:
             message += f"{i:<4}{score:<8}{rank[0]:<4}{rank[1]:<4}{rank[2]:<4}{rank[3]:<4}{name}\n"
-
+    print(message)
+    print('next2')
     # group per 40 lines
     lines_per_msg = 40
     message = message.split("\n")
     message = ["\n".join(message[i:i+lines_per_msg]) for i in range(0, len(message), lines_per_msg)]
     message = ["```\n" + s + "\n```\n"for s in message]
+    print(message)
     return message
 
 def printPointDifferences(games, all_players, name_mapping=None):
