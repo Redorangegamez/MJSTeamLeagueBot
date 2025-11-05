@@ -180,7 +180,7 @@ async def status_loop():
             content += f"## 🀄 3-Player (Sanma) Lobby Status\n{sanma_content}\n\n"
         content += f"Last edited on: <t:{timestamp}:F>"
 
-        msg = await status_loop.status_msg_id.fetch_message(status_loop.status_msg_id)
+        msg = await status_loop.channel.fetch_message(status_loop.status_msg_id)
         await msg.edit(content=content)
     except Exception as e:
         print("Error in status_loop:", e)
