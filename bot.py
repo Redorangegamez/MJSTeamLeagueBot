@@ -12,8 +12,6 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
 
-status_message = None
-
 leaderboard_started = False
 status_started = False
 
@@ -69,32 +67,34 @@ async def on_ready():
     leaderboard_loop.sanma_indv_channel = bot.get_channel(config.SANMA_INDV_CHANNEL_ID)
     leaderboard_loop.sanma_team_channel = bot.get_channel(config.SANMA_TEAM_CHANNEL_ID)
     
-    async def clear_channel(channel):
-        async for message in channel.history(limit=100):
-            await message.delete()
-            time.sleep(1)
+    #async def clear_channel(channel):
+    #    async for message in channel.history(limit=100):
+    #        await message.delete()
+    #        time.sleep(1)
 
-    await clear_channel(leaderboard_loop.indv_channel)
-    await clear_channel(leaderboard_loop.team_channel)
-    await clear_channel(leaderboard_loop.sanma_indv_channel)
-    await clear_channel(leaderboard_loop.sanma_team_channel)
-    await clear_channel(status_loop.channel)
+    #await clear_channel(leaderboard_loop.indv_channel)
+    #await clear_channel(leaderboard_loop.team_channel)
+    #await clear_channel(leaderboard_loop.sanma_indv_channel)
+    #await clear_channel(leaderboard_loop.sanma_team_channel)
+    #await clear_channel(status_loop.channel)
+
+    status_loop.status_msg_id = config.STATUS_CHANNEL_MSG_IDS
     
-    leaderboard_loop.indv_msg_ids = []
-    for i in range(5):
-        msg = await leaderboard_loop.indv_channel.send(content="``` \n```")
-        leaderboard_loop.indv_msg_ids.append(msg.id)
+    leaderboard_loop.indv_msg_ids = config.INDV_CHANNEL_MSG_IDS
+    #for i in range(5):
+    #    msg = await leaderboard_loop.indv_channel.send(content="``` \n```")
+    #    leaderboard_loop.indv_msg_ids.append(msg.id)
 
-    msg = await leaderboard_loop.team_channel.send(content="``` \n```")
-    leaderboard_loop.team_msg_id = msg.id
+    #msg = await leaderboard_loop.team_channel.send(content="``` \n```")
+    leaderboard_loop.team_msg_id = config.TEAM_CHANNEL_MSG_IDS
 
-    leaderboard_loop.sanma_indv_msg_ids = []
+    leaderboard_loop.sanma_indv_msg_ids = config.SANMA_INDV_CHANNEL_MSG_IDS
     for i in range(5):
         msg = await leaderboard_loop.sanma_indv_channel.send(content="``` \n```")
         leaderboard_loop.sanma_indv_msg_ids.append(msg.id)
 
-    msg = await leaderboard_loop.sanma_team_channel.send(content="``` \n```")
-    leaderboard_loop.sanma_team_msg_id = msg.id
+    #msg = await leaderboard_loop.sanma_team_channel.send(content="``` \n```")
+    leaderboard_loop.sanma_team_msg_id = config.SANMA_TEAM_CHANNEL_MSG_IDS
 
     leaderboard_loop.username2name = get_username2name_mapping()
     name2team = get_username2team_mapping()
@@ -157,7 +157,6 @@ async def leaderboard_loop():
 
 @tasks.loop(seconds=config.STATUS_UPDATE_PERIOD)
 async def status_loop():
-    global status_message
     try:
         four_p_content = await get_readied_players(config.TOURN_ID, config.SEASON_ID, 4)
         sanma_content = await get_readied_players(config.SANMA_TOURN_ID, config.SANMA_SEASON_ID, 3)
@@ -174,11 +173,10 @@ async def status_loop():
         if sanma_content:
             content += f"## 🀄 3-Player (Sanma) Lobby Status\n{sanma_content}"
     
-        # Send or edit Discord message
-        if status_message is None:
-            status_message = await status_loop.channel.send(content)
+        if status_loop.status_msg_id is None:
+            status_loop.status_msg_id = await status_loop.channel.send(content)
         else:
-            await status_message.edit(content=content)
+            await status_loop.status_msg_id.edit(content=content)
     except Exception as e:
         print("Error in status_loop:", e)
 
