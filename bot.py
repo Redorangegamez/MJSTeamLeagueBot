@@ -7,6 +7,7 @@ from majsoul_api import *
 from majsoul_tracker import get_readied_players
 from scrap import check_config
 from utils import *
+from datetime import datetime
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -125,11 +126,13 @@ async def leaderboard_loop():
     for i in range(len(indv)):
         msg_id = leaderboard_loop.indv_msg_ids[i]
         msg = await leaderboard_loop.indv_channel.fetch_message(msg_id)
+        if i == len(indv) - 1:
+            indv[i] += "Last Edited on: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         await msg.edit(content=indv[i])
 
     team = format_leaderboard(team_result)
     assert len(team) == 1, str(len(team))
-    team_msg = team[0]
+    team_msg = team[0] += "Last Edited on: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     msg = await leaderboard_loop.team_channel.fetch_message(leaderboard_loop.team_msg_id)
     await msg.edit(content=team_msg)
 
@@ -146,12 +149,14 @@ async def leaderboard_loop():
     for i in range(len(indv)):
         msg_id = leaderboard_loop.sanma_indv_msg_ids[i]
         msg = await leaderboard_loop.sanma_indv_channel.fetch_message(msg_id)
+        if i == len(indv) - 1:
+            indv[i] += "Last Edited on: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         await msg.edit(content=indv[i])
 
 
     team = format_leaderboard(team_result)
     assert len(team) == 1, str(len(team))
-    team_msg = team[0]
+    team_msg = team[0] += "Last Edited on: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     msg = await leaderboard_loop.sanma_team_channel.fetch_message(leaderboard_loop.sanma_team_msg_id)
     await msg.edit(content=team_msg)
 
@@ -172,6 +177,10 @@ async def status_loop():
             content += f"## 🀄 4-Player Lobby Status\n{four_p_content}\n\n"
         if sanma_content:
             content += f"## 🀄 3-Player (Sanma) Lobby Status\n{sanma_content}"
+
+        print(four_p_content)
+        print(sanma_content)
+        print(content)
     
         if status_loop.status_msg_id is None:
             status_loop.status_msg_id = await status_loop.channel.send(content)
