@@ -132,7 +132,7 @@ async def leaderboard_loop():
 
     team = format_leaderboard(team_result)
     assert len(team) == 1, str(len(team))
-    team_msg = team[0] += "Last Edited on: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    team_msg = team[0] + "Last Edited on: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     msg = await leaderboard_loop.team_channel.fetch_message(leaderboard_loop.team_msg_id)
     await msg.edit(content=team_msg)
 
@@ -156,7 +156,7 @@ async def leaderboard_loop():
 
     team = format_leaderboard(team_result)
     assert len(team) == 1, str(len(team))
-    team_msg = team[0] += "Last Edited on: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    team_msg = team[0] + "Last Edited on: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     msg = await leaderboard_loop.sanma_team_channel.fetch_message(leaderboard_loop.sanma_team_msg_id)
     await msg.edit(content=team_msg)
 
