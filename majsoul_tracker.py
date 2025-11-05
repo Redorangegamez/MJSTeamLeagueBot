@@ -7,20 +7,12 @@ ROUNDS = [
     '西１', '西２', '西３', '西４',
 ]
 
-current_games = []
-current_sanma_games = []
-sequence = 0
-sanma_sequence = 0
 username2name_mapping = get_username2name_mapping()
 
 async def get_status(lobby: int, season: int, players: int):
-    """Fetch live game status and update `current_games` list."""
-    global current_games
-    global current_sanma_games
     players_per_table = players
     updates = await live_status(lobby, season)
     current_games = []
-    current_sanma_games = []
 
     for game in updates:
         if game.get("wind", -1) > -1:
@@ -35,45 +27,23 @@ async def get_status(lobby: int, season: int, players: int):
 
             round_str = ROUNDS[(game["round"] * 4) + game["wind"]]
             honba = game["honba"]
-            if players == 4:
-                current_games.append(f"　`{round_str}-{honba}` {', '.join(player_list)}")
-            if players == 3:
-                current_sanma_games.append(f"　`{round_str}-{honba}` {', '.join(player_list)}")
-    if players == 4:
-        return current_games
-    else:
-        return current_sanma_games
+            current_games.append(f"　`{round_str}-{honba}` {', '.join(player_list)}")
+    return current_games
 
 async def get_readied_players(lobby: int, season: int, players: int):
-    """Fetch ready players and optionally refresh live status."""
-    global sequence
-    global sanma_sequence
-    global current_games
-    global current_sanma_games
+    sequence = 0
     res = await active_players(lobby, season)
     if "error" in res:
         return res["error"]
 
     ready_players = [p["nickname"] for p in res if p.get("nickname")]
-    if players == 4:
-        sequence += 1
-        if sequence % 4 == 0:
-            await get_status(lobby, season, players)
-    if players == 3:
-        sanma_sequence += 1
-        if sanma_sequence % 4 == 0:
-            await get_status(lobby, season, players)
+    current_games = await get_status(lobby, season, players)
 
     playing_str = ""
-    if current_games and players == 4:
+    if current_games:
         player_count = len(current_games) * players
         playing_str = "\n**Playing ({}):**\n{}".format(
             player_count, "\n".join(current_games)
-        )
-    if current_sanma_games and players == 3:
-        player_count = len(current_sanma_games) * players
-        playing_str = "\n**Playing ({}):**\n{}".format(
-            player_count, "\n".join(current_sanma_games)
         )
 
     if not ready_players:
@@ -82,4 +52,5 @@ async def get_readied_players(lobby: int, season: int, players: int):
     ready_players.sort(key=lambda x: x.lower())
     ready_players[:] = [f"{username2name_mapping.get(player, 'Unknown')} ({player})" for player in ready_players]
     ready_str = ", ".join(ready_players)
+    print(f"# **{players}** Player Lobby\n**Ready ({len(ready_players)}):** {ready_str}{playing_str}")
     return f"# **{players}** Player Lobby\n**Ready ({len(ready_players)}):** {ready_str}{playing_str}"
