@@ -7,7 +7,6 @@ from majsoul_api import *
 from majsoul_tracker import get_readied_players
 from scrap import check_config
 from utils import *
-from datetime import datetime
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -121,18 +120,19 @@ async def leaderboard_loop():
     games = await load_games(config.TOURN_ID, config.SEASON_ID)
     indv_result = calculate_score(games, leaderboard_loop.all_players, leaderboard_loop.username2name)
     team_result = calculate_score(games, leaderboard_loop.all_players, leaderboard_loop.username2team)
+    timestamp = int(time.time())
 
     indv = format_leaderboard(indv_result)
     for i in range(len(indv)):
         msg_id = leaderboard_loop.indv_msg_ids[i]
         msg = await leaderboard_loop.indv_channel.fetch_message(msg_id)
         if i == len(indv) - 1:
-            indv[i] += "Last Edited on: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            indv[i] += f"Last edited on: <t:{timestamp}:F>"
         await msg.edit(content=indv[i])
 
     team = format_leaderboard(team_result)
     assert len(team) == 1, str(len(team))
-    team_msg = team[0] + "Last Edited on: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    team_msg = team[0] + f"Last edited on: <t:{timestamp}:F>"
     msg = await leaderboard_loop.team_channel.fetch_message(leaderboard_loop.team_msg_id)
     await msg.edit(content=team_msg)
 
@@ -150,13 +150,13 @@ async def leaderboard_loop():
         msg_id = leaderboard_loop.sanma_indv_msg_ids[i]
         msg = await leaderboard_loop.sanma_indv_channel.fetch_message(msg_id)
         if i == len(indv) - 1:
-            indv[i] += "Last Edited on: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            indv[i] += f"Last edited on: <t:{timestamp}:F>"
         await msg.edit(content=indv[i])
 
 
     team = format_leaderboard(team_result)
     assert len(team) == 1, str(len(team))
-    team_msg = team[0] + "Last Edited on: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    team_msg = team[0] + f"Last edited on: <t:{timestamp}:F>"
     msg = await leaderboard_loop.sanma_team_channel.fetch_message(leaderboard_loop.sanma_team_msg_id)
     await msg.edit(content=team_msg)
 
@@ -165,6 +165,7 @@ async def status_loop():
     try:
         four_p_content = await get_readied_players(config.TOURN_ID, config.SEASON_ID, 4)
         sanma_content = await get_readied_players(config.SANMA_TOURN_ID, config.SANMA_SEASON_ID, 3)
+        timestamp = int(time.time())
     
         # If either failed to fetch, skip update to avoid overwriting with blank
         if not four_p_content and not sanma_content:
@@ -176,7 +177,8 @@ async def status_loop():
         if four_p_content:
             content += f"## 🀄 4-Player Lobby Status\n{four_p_content}\n\n"
         if sanma_content:
-            content += f"## 🀄 3-Player (Sanma) Lobby Status\n{sanma_content}"
+            content += f"## 🀄 3-Player (Sanma) Lobby Status\n{sanma_content}\n\n"
+        content += f"Last edited on: <t:{timestamp}:F>"
 
         msg = await status_loop.status_msg_id.fetch_message(status_loop.status_msg_id)
         await msg.edit(content=content)
