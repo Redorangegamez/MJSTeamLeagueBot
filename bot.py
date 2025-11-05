@@ -178,17 +178,8 @@ async def status_loop():
         if sanma_content:
             content += f"## 🀄 3-Player (Sanma) Lobby Status\n{sanma_content}"
 
-        print('hi')
-        print(four_p_content)
-        print('hi2')
-        print(sanma_content)
-        print('hi3')
-        print(content)
-    
-        if status_loop.status_msg_id is None:
-            status_loop.status_msg_id = await status_loop.channel.send(content)
-        else:
-            await status_loop.status_msg_id.edit(content=content)
+        msg = await status_loop.status_msg_id.fetch_message(status_loop.status_msg_id)
+        await msg.edit(content=content)
     except Exception as e:
         print("Error in status_loop:", e)
 
