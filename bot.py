@@ -90,9 +90,9 @@ async def on_ready():
     leaderboard_loop.team_msg_id = config.TEAM_CHANNEL_MSG_IDS
 
     leaderboard_loop.sanma_indv_msg_ids = config.SANMA_INDV_CHANNEL_MSG_IDS
-    for i in range(5):
-        msg = await leaderboard_loop.sanma_indv_channel.send(content="``` \n```")
-        leaderboard_loop.sanma_indv_msg_ids.append(msg.id)
+    #for i in range(5):
+    #    msg = await leaderboard_loop.sanma_indv_channel.send(content="``` \n```")
+    #    leaderboard_loop.sanma_indv_msg_ids.append(msg.id)
 
     #msg = await leaderboard_loop.sanma_team_channel.send(content="``` \n```")
     leaderboard_loop.sanma_team_msg_id = config.SANMA_TEAM_CHANNEL_MSG_IDS
@@ -178,8 +178,11 @@ async def status_loop():
         if sanma_content:
             content += f"## 🀄 3-Player (Sanma) Lobby Status\n{sanma_content}"
 
+        print('hi')
         print(four_p_content)
+        print('hi2')
         print(sanma_content)
+        print('hi3')
         print(content)
     
         if status_loop.status_msg_id is None:
