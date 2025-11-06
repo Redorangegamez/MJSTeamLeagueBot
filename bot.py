@@ -127,12 +127,12 @@ async def leaderboard_loop():
         msg_id = leaderboard_loop.indv_msg_ids[i]
         msg = await leaderboard_loop.indv_channel.fetch_message(msg_id)
         if i == len(indv) - 1:
-            indv[i] += f"Last edited on: <t:{timestamp}:F>"
+            indv[i] += f"Last edited on: <t:{timestamp}:R>"
         await msg.edit(content=indv[i])
 
     team = format_leaderboard(team_result)
     assert len(team) == 1, str(len(team))
-    team_msg = team[0] + f"Last edited on: <t:{timestamp}:F>"
+    team_msg = team[0] + f"Last edited on: <t:{timestamp}:R>"
     msg = await leaderboard_loop.team_channel.fetch_message(leaderboard_loop.team_msg_id)
     await msg.edit(content=team_msg)
 
@@ -150,13 +150,13 @@ async def leaderboard_loop():
         msg_id = leaderboard_loop.sanma_indv_msg_ids[i]
         msg = await leaderboard_loop.sanma_indv_channel.fetch_message(msg_id)
         if i == len(indv) - 1:
-            indv[i] += f"Last edited on: <t:{timestamp}:F>"
+            indv[i] += f"Last edited on: <t:{timestamp}:R>"
         await msg.edit(content=indv[i])
 
 
     team = format_leaderboard(team_result)
     assert len(team) == 1, str(len(team))
-    team_msg = team[0] + f"Last edited on: <t:{timestamp}:F>"
+    team_msg = team[0] + f"Last edited on: <t:{timestamp}:R>"
     msg = await leaderboard_loop.sanma_team_channel.fetch_message(leaderboard_loop.sanma_team_msg_id)
     await msg.edit(content=team_msg)
 
@@ -178,7 +178,7 @@ async def status_loop():
             content += f"## 🀄 4-Player Lobby Status\n{four_p_content}\n\n"
         if sanma_content:
             content += f"## 🀄 3-Player (Sanma) Lobby Status\n{sanma_content}\n\n"
-        content += f"Last edited on: <t:{timestamp}:F>"
+        content += f"Last edited on: <t:{timestamp}:R>"
 
         msg = await status_loop.channel.fetch_message(status_loop.status_msg_id)
         await msg.edit(content=content)
