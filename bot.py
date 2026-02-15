@@ -122,6 +122,7 @@ async def leaderboard_loop():
     team_result = calculate_score(games, leaderboard_loop.all_players, leaderboard_loop.username2team)
     timestamp = int(time.time())
 
+    print("are we here")
     indv = format_leaderboard(indv_result)
     for i in range(len(indv)):
         msg_id = leaderboard_loop.indv_msg_ids[i]
