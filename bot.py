@@ -92,6 +92,11 @@ async def on_ready():
     leaderboard_loop.sanma_indv_msgs = []
     leaderboard_loop.sanma_team_msg = None
 
+    print("leaderboard_loop type:", type(leaderboard_loop))
+    print("leaderboard_loop repr:", leaderboard_loop)
+    print("is function:", callable(leaderboard_loop))
+    print("has start:", hasattr(leaderboard_loop, "start"))
+
     if not leaderboard_started:
         print("LEADERBOARD LOOP TICK")
         leaderboard_loop.start()
