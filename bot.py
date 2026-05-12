@@ -92,10 +92,12 @@ async def on_ready():
     leaderboard_loop.sanma_team_msg = None
 
     if not leaderboard_started:
+        print("LEADERBOARD LOOP TICK")
         leaderboard_loop.start()
         leaderboard_started = True
 
     if not status_started:
+        print("LEADERBOARD LOOP TICK")
         status_loop.start()
         status_started = True
 
@@ -104,42 +106,39 @@ async def on_ready():
 
 @tasks.loop(seconds=config.LEADERBOARD_UPDATE_PERIOD)
 async def leaderboard_loop():
+    try:
+        print("LEADERBOARD LOOP TICK")
 
-    games = await load_games(config.TOURN_ID, config.SEASON_ID)
+        games = await load_games(config.TOURN_ID, config.SEASON_ID)
 
-    indv_result = calculate_score(
-        games,
-        leaderboard_loop.all_players,
-        leaderboard_loop.username2name
-    )
+        print("Games loaded:", len(games))
 
-    team_result = calculate_score(
-        games,
-        leaderboard_loop.all_players,
-        leaderboard_loop.username2team
-    )
-
-    timestamp = int(time.time())
-
-    indv_rows = format_leaderboard(indv_result)
-    team_rows = format_leaderboard(team_result)
-
-    # chunking (SAFE FOR 103+ PLAYERS)
-    chunks = [indv_rows[i:i+25] for i in range(0, len(indv_rows), 25)]
-
-    # -------- INDIVIDUAL LEADERBOARD -------- #
-    for i, chunk in enumerate(chunks):
-
-        msg = await get_or_create_message(
-            leaderboard_loop.indv_channel,
-            leaderboard_loop.indv_msgs,
-            i
+        indv_result = calculate_score(
+            games,
+            leaderboard_loop.all_players,
+            leaderboard_loop.username2name
         )
 
-        content = "```" + "\n".join(chunk)
-        content += f"\nLast update: <t:{timestamp}:R>```"
+        print("Score calculated")
 
-        await msg.edit(content=content)
+        indv_rows = format_leaderboard(indv_result)
+
+        print("Formatted rows:", len(indv_rows))
+
+        chunks = [indv_rows[i:i+25] for i in range(0, len(indv_rows), 25)]
+
+        for i, chunk in enumerate(chunks):
+            msg = await get_or_create_message(
+                leaderboard_loop.indv_channel,
+                leaderboard_loop.indv_msgs,
+                i
+            )
+
+            content = "```" + "\n".join(chunk) + "```"
+            await msg.edit(content=content)
+
+    except Exception as e:
+        print("❌ leaderboard_loop crashed:", repr(e))
 
     # delete extra old messages if shrinking
     while len(leaderboard_loop.indv_msgs) > len(chunks):
