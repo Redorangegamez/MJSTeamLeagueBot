@@ -79,26 +79,27 @@ async def on_ready():
     #await clear_channel(status_loop.channel)
 
     status_loop.status_msg_id = config.STATUS_CHANNEL_MSG_IDS
+    print('here1')
     
     leaderboard_loop.indv_msg_ids = config.INDV_CHANNEL_MSG_IDS
-    #for i in range(5):
-    #    msg = await leaderboard_loop.indv_channel.send(content="``` \n```")
-    #    leaderboard_loop.indv_msg_ids.append(msg.id)
+    for i in range(5):
+        msg = await leaderboard_loop.indv_channel.send(content="``` \n```")
+        leaderboard_loop.indv_msg_ids.append(msg.id)
 
-    #msg = await leaderboard_loop.team_channel.send(content="``` \n```")
+    msg = await leaderboard_loop.team_channel.send(content="``` \n```")
     leaderboard_loop.team_msg_id = config.TEAM_CHANNEL_MSG_IDS
 
     leaderboard_loop.sanma_indv_msg_ids = config.SANMA_INDV_CHANNEL_MSG_IDS
-    #for i in range(5):
-    #    msg = await leaderboard_loop.sanma_indv_channel.send(content="``` \n```")
-    #    leaderboard_loop.sanma_indv_msg_ids.append(msg.id)
+    for i in range(5):
+        msg = await leaderboard_loop.sanma_indv_channel.send(content="``` \n```")
+        leaderboard_loop.sanma_indv_msg_ids.append(msg.id)
 
-    #msg = await leaderboard_loop.sanma_team_channel.send(content="``` \n```")
+    msg = await leaderboard_loop.sanma_team_channel.send(content="``` \n```")
     leaderboard_loop.sanma_team_msg_id = config.SANMA_TEAM_CHANNEL_MSG_IDS
 
     leaderboard_loop.username2name = get_username2name_mapping()
     name2team = get_username2team_mapping()
-
+    print('here2')
     leaderboard_loop.username2team = {}
 
     for username, name in leaderboard_loop.username2name.items():
@@ -107,7 +108,7 @@ async def on_ready():
             continue
         leaderboard_loop.username2team[username] = name2team[name]
     leaderboard_loop.all_players = list(leaderboard_loop.username2name.keys())
-
+    print('here3')
     if not leaderboard_started:
         leaderboard_loop.start()
         leaderboard_started = True
@@ -121,6 +122,7 @@ async def leaderboard_loop():
     indv_result = calculate_score(games, leaderboard_loop.all_players, leaderboard_loop.username2name)
     team_result = calculate_score(games, leaderboard_loop.all_players, leaderboard_loop.username2team)
     timestamp = int(time.time())
+    print('here4')
 
     indv = format_leaderboard(indv_result)
     for i in range(len(indv)):
