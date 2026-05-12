@@ -3,26 +3,26 @@ import discord
 from discord.ext import tasks, commands
 import config
 import time
+import traceback
 
 from majsoul_api import *
 from majsoul_tracker import get_readied_players
 from scrap import check_config
 from utils import *
 
-# ---------------- BOT SETUP ---------------- #
+# ---------------- BOT ---------------- #
 
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 
-# ---------------- STATE (NO FUNCTION MUTATION) ---------------- #
+# ---------------- STATE ---------------- #
 
 state = {
     "indv_msgs": [],
     "team_msg": None,
-    "sanma_indv_msgs": [],
-    "sanma_team_msg": None,
+    "status_msg": None,
     "players": [],
     "username2name": {},
     "username2team": {},
@@ -30,191 +30,223 @@ state = {
 }
 
 
-# ---------------- SAFE HELPERS ---------------- #
+# ---------------- SAFE FETCH ---------------- #
 
-async def safe_fetch(channel_id):
+async def safe_fetch(channel_id, name):
     try:
-        return await bot.fetch_channel(channel_id)
+        print(f"[FETCH] Trying channel {name} ({channel_id})")
+        ch = await bot.fetch_channel(channel_id)
+        print(f"[FETCH] OK {name}: {ch}")
+        return ch
     except Exception as e:
-        print(f"Failed to fetch channel {channel_id}: {e}")
+        print(f"[FETCH ERROR] {name}: {e}")
         return None
 
 
-async def get_or_create(channel, msg_list, index):
-    if index < len(msg_list):
-        return msg_list[index]
-
-    msg = await channel.send("``` ```")
-    msg_list.append(msg)
-    return msg
-
-
-# ---------------- LIFECYCLE HOOK ---------------- #
+# ---------------- SETUP HOOK ---------------- #
 
 @bot.event
 async def setup_hook():
-    """
-    Correct place to start tasks.
-    Runs once BEFORE bot is fully ready.
-    """
+    print("[SETUP] setup_hook started")
 
-    check_config()
-    print("setup_hook running...")
+    try:
+        check_config()
+        print("[SETUP] config OK")
 
-    # preload mappings (safe here)
-    username2name = get_username2name_mapping()
-    name2team = get_username2team_mapping()
+        username2name = get_username2name_mapping()
+        name2team = get_username2team_mapping()
 
-    state["username2name"] = username2name
-    state["username2team"] = {}
+        print("[SETUP] mappings loaded")
 
-    for u, name in username2name.items():
-        if name in name2team:
-            state["username2team"][u] = name2team[name]
+        state["username2name"] = username2name
+        state["username2team"] = {}
 
-    state["players"] = list(username2name.keys())
+        for u, name in username2name.items():
+            if name in name2team:
+                state["username2team"][u] = name2team[name]
 
-    # start tasks safely
-    leaderboard_task.start()
-    status_task.start()
+        state["players"] = list(username2name.keys())
+
+        print(f"[SETUP] players loaded: {len(state['players'])}")
+
+        print("[SETUP] starting tasks...")
+        leaderboard_task.start()
+        status_task.start()
+
+        print("[SETUP] tasks started")
+
+    except Exception as e:
+        print("[SETUP ERROR]")
+        traceback.print_exc()
 
 
-# ---------------- ON READY (LOG ONLY) ---------------- #
+# ---------------- READY ---------------- #
 
 @bot.event
 async def on_ready():
-    print(f"Logged in as {bot.user}")
+    print(f"[READY] Logged in as {bot.user}")
 
 
-# ---------------- TASK: LEADERBOARD ---------------- #
+# ---------------- LEADERBOARD LOOP ---------------- #
 
 @tasks.loop(seconds=config.LEADERBOARD_UPDATE_PERIOD)
 async def leaderboard_task():
 
-    games = await load_games(config.TOURN_ID, config.SEASON_ID)
+    print("\n[LEADERBOARD] tick started")
 
-    indv = calculate_score(
-        games,
-        state["players"],
-        state["username2name"]
-    )
+    try:
+        print("[LEADERBOARD] loading games...")
+        games = await load_games(config.TOURN_ID, config.SEASON_ID)
 
-    team = calculate_score(
-        games,
-        state["players"],
-        state["username2team"]
-    )
+        print(f"[LEADERBOARD] games loaded: {len(games)}")
 
-    timestamp = int(time.time())
+        print("[LEADERBOARD] calculating score...")
+        indv = calculate_score(
+            games,
+            state["players"],
+            state["username2name"]
+        )
 
-    indv_rows = format_leaderboard(indv)
-    team_rows = format_leaderboard(team)
+        team = calculate_score(
+            games,
+            state["players"],
+            state["username2team"]
+        )
 
-    # chunk for 103+ players
-    chunks = [indv_rows[i:i+25] for i in range(0, len(indv_rows), 25)]
+        print("[LEADERBOARD] score done")
 
-    channel = state["channels"].get("indv")
+        indv_rows = format_leaderboard(indv)
+        team_rows = format_leaderboard(team)
 
-    if not channel:
-        channel = await safe_fetch(config.INDV_CHANNEL_ID)
-        state["channels"]["indv"] = channel
+        print(f"[LEADERBOARD] rows: {len(indv_rows)}")
 
-    if not channel:
-        print("INDV channel missing")
-        return
+        chunks = [indv_rows[i:i+25] for i in range(0, len(indv_rows), 25)]
 
-    # update individual leaderboard
-    for i, chunk in enumerate(chunks):
+        print(f"[LEADERBOARD] chunks: {len(chunks)}")
 
-        msg = await get_or_create(channel, state["indv_msgs"], i)
+        # ---------------- INDIVIDUAL ---------------- #
 
-        content = "```" + "\n".join(chunk)
-        content += f"\nLast update: <t:{timestamp}:R>```"
+        if "indv" not in state["channels"]:
+            print("[LEADERBOARD] fetching INDV channel")
+            state["channels"]["indv"] = await safe_fetch(config.INDV_CHANNEL_ID, "INDV")
 
-        await msg.edit(content=content)
+        ch = state["channels"]["indv"]
 
-    # team leaderboard (single message)
-    team_channel = state["channels"].get("team")
+        if not ch:
+            print("[LEADERBOARD] INDV channel missing - abort")
+            return
 
-    if not team_channel:
-        team_channel = await safe_fetch(config.TEAM_CHANNEL_ID)
-        state["channels"]["team"] = team_channel
+        for i, chunk in enumerate(chunks):
 
-    if not team_channel:
-        print("TEAM channel missing")
-        return
+            print(f"[LEADERBOARD] sending chunk {i}")
 
-    if state["team_msg"] is None:
-        state["team_msg"] = await team_channel.send("``` ```")
+            msg = await ch.send("``` ```")
+            state["indv_msgs"].append(msg)
 
-    team_content = "```" + "\n".join(team_rows)
-    team_content += f"\nLast update: <t:{timestamp}:R>```"
+            content = "```" + "\n".join(chunk) + "```"
 
-    await state["team_msg"].edit(content=team_content)
+            print(f"[LEADERBOARD] editing chunk {i}")
+            await msg.edit(content=content)
+
+        # ---------------- TEAM ---------------- #
+
+        if "team" not in state["channels"]:
+            print("[LEADERBOARD] fetching TEAM channel")
+            state["channels"]["team"] = await safe_fetch(config.TEAM_CHANNEL_ID, "TEAM")
+
+        team_ch = state["channels"]["team"]
+
+        if not team_ch:
+            print("[LEADERBOARD] TEAM channel missing")
+            return
+
+        if state["team_msg"] is None:
+            print("[LEADERBOARD] sending team msg")
+            state["team_msg"] = await team_ch.send("``` ```")
+
+        team_content = "```" + "\n".join(team_rows) + "```"
+
+        print("[LEADERBOARD] editing team msg")
+        await state["team_msg"].edit(content=team_content)
+
+        print("[LEADERBOARD] tick finished")
+
+    except Exception as e:
+        print("[LEADERBOARD ERROR]")
+        traceback.print_exc()
 
 
-# ---------------- TASK: STATUS ---------------- #
+# ---------------- STATUS LOOP ---------------- #
 
 @tasks.loop(seconds=config.STATUS_UPDATE_PERIOD)
 async def status_task():
 
+    print("\n[STATUS] tick started")
+
     try:
-        four_p = await get_readied_players(
-            config.TOURN_ID,
-            config.SEASON_ID,
-            4
-        )
+        print("[STATUS] fetching data...")
 
-        sanma = await get_readied_players(
-            config.SANMA_TOURN_ID,
-            config.SANMA_SEASON_ID,
-            3
-        )
+        four_p = await get_readied_players(config.TOURN_ID, config.SEASON_ID, 4)
+        sanma = await get_readied_players(config.SANMA_TOURN_ID, config.SANMA_SEASON_ID, 3)
 
-        timestamp = int(time.time())
+        print("[STATUS] data fetched")
 
         content = ""
 
         if four_p:
-            content += f"## 4-Player Lobby\n{four_p}\n\n"
+            content += f"## 4P\n{four_p}\n\n"
 
         if sanma:
-            content += f"## 3-Player Lobby\n{sanma}\n\n"
+            content += f"## 3P\n{sanma}\n\n"
 
-        content += f"Last update: <t:{timestamp}:R>"
+        content += f"Last update: <t:{int(time.time())}:R>"
 
-        channel = state["channels"].get("status")
+        if "status" not in state["channels"]:
+            print("[STATUS] fetching channel")
+            state["channels"]["status"] = await safe_fetch(config.STATUS_CHANNEL_ID, "STATUS")
 
-        if not channel:
-            channel = await safe_fetch(config.STATUS_CHANNEL_ID)
-            state["channels"]["status"] = channel
+        ch = state["channels"]["status"]
 
-        if not channel:
-            print("STATUS channel missing")
+        if not ch:
+            print("[STATUS] missing channel")
             return
 
-        if not hasattr(status_task, "msg"):
-            status_task.msg = await channel.send("``` ```")
+        if state["status_msg"] is None:
+            print("[STATUS] sending msg")
+            state["status_msg"] = await ch.send("``` ```")
 
-        await status_task.msg.edit(content=content)
+        print("[STATUS] editing msg")
+        await state["status_msg"].edit(content=content)
 
-    except Exception as e:
-        print("status_task error:", repr(e))
+        print("[STATUS] tick finished")
+
+    except Exception:
+        print("[STATUS ERROR]")
+        traceback.print_exc()
 
 
 # ---------------- MAIN ---------------- #
 
 async def main():
-    token = await get_token(config.MS_USERNAME, config.MS_PASSWORD)
+    print("[MAIN] starting")
 
-    if not token:
-        print("Failed to get Mahjong Soul token")
-        return
+    try:
+        token = await get_token(config.MS_USERNAME, config.MS_PASSWORD)
 
-    config.MS_TOKEN = token
-    print("Logged into Mahjong Soul API")
+        print("[MAIN] token result:", token)
 
-    await bot.start(config.BOT_TOKEN)
+        if not token:
+            print("[MAIN] FAILED to get token")
+            return
+
+        config.MS_TOKEN = token
+
+        print("[MAIN] starting bot")
+        await bot.start(config.BOT_TOKEN)
+
+    except Exception:
+        print("[MAIN ERROR]")
+        traceback.print_exc()
 
 
 if __name__ == "__main__":
