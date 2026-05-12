@@ -84,6 +84,7 @@ async def on_ready():
             leaderboard_loop.username2team[u] = name2team[name]
     print('got name mapping')
     leaderboard_loop.all_players = list(leaderboard_loop.username2name.keys())
+    print(leaderboard_loop.all_players)
 
     # init message storage
     leaderboard_loop.indv_msgs = []
