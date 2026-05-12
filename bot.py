@@ -79,7 +79,6 @@ async def on_ready():
     await clear_channel(leaderboard_loop.sanma_team_channel)
     await clear_channel(status_loop.channel)
     print('cleared channels')
-    status_loop.status_msg_id = config.STATUS_CHANNEL_MSG_IDS
     print('here1')
     
     leaderboard_loop.indv_msg_ids = config.INDV_CHANNEL_MSG_IDS
