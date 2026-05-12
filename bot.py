@@ -49,16 +49,19 @@ async def get_or_create_message(channel, msg_list, index):
 
 @bot.event
 async def on_ready():
-    global leaderboard_started, status_started
+    print("ENTERED on_ready")
 
     check_config()
-    print(f"Logged in as {bot.user}")
+    print("AFTER check_config")
 
-    # channels
     status_loop.channel = await safe_fetch_channel(config.STATUS_CHANNEL_ID)
+    print("STATUS CHANNEL:", status_loop.channel)
 
     leaderboard_loop.indv_channel = await safe_fetch_channel(config.INDV_CHANNEL_ID)
+    print("INDV CHANNEL:", leaderboard_loop.indv_channel)
+
     leaderboard_loop.team_channel = await safe_fetch_channel(config.TEAM_CHANNEL_ID)
+    print("TEAM CHANNEL:", leaderboard_loop.team_channel)
     leaderboard_loop.sanma_indv_channel = await safe_fetch_channel(config.SANMA_INDV_CHANNEL_ID)
     leaderboard_loop.sanma_team_channel = await safe_fetch_channel(config.SANMA_TEAM_CHANNEL_ID)
 
