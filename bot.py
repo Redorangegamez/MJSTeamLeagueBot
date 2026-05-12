@@ -67,16 +67,16 @@ async def on_ready():
     leaderboard_loop.sanma_indv_channel = bot.get_channel(config.SANMA_INDV_CHANNEL_ID)
     leaderboard_loop.sanma_team_channel = bot.get_channel(config.SANMA_TEAM_CHANNEL_ID)
     
-    #async def clear_channel(channel):
-    #    async for message in channel.history(limit=100):
-    #        await message.delete()
-    #        time.sleep(1)
+    async def clear_channel(channel):
+        async for message in channel.history(limit=100):
+            await message.delete()
+            time.sleep(1)
 
-    #await clear_channel(leaderboard_loop.indv_channel)
-    #await clear_channel(leaderboard_loop.team_channel)
-    #await clear_channel(leaderboard_loop.sanma_indv_channel)
-    #await clear_channel(leaderboard_loop.sanma_team_channel)
-    #await clear_channel(status_loop.channel)
+    await clear_channel(leaderboard_loop.indv_channel)
+    await clear_channel(leaderboard_loop.team_channel)
+    await clear_channel(leaderboard_loop.sanma_indv_channel)
+    await clear_channel(leaderboard_loop.sanma_team_channel)
+    await clear_channel(status_loop.channel)
 
     status_loop.status_msg_id = config.STATUS_CHANNEL_MSG_IDS
     print('here1')
