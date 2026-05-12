@@ -3,6 +3,7 @@ import discord
 from discord.ext import tasks, commands
 import config
 import time
+
 from majsoul_api import *
 from majsoul_tracker import get_readied_players
 from scrap import check_config
@@ -15,189 +16,186 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 leaderboard_started = False
 status_started = False
 
-@bot.command()
-async def pause(ctx, nickname: str):
-    """Pause a running game by player nickname in default lobby."""
+
+# ---------------- SAFE CHANNEL FETCH ---------------- #
+
+async def safe_fetch_channel(channel_id):
     try:
-        lobby = config.TOURN_ID  # or SANMA_TOURN_ID depending on type
-        game_uuid = await find_player_game(lobby, config.SEASON_ID, nickname)
-        if not game_uuid:
-            await ctx.send(f"⚠️ No active game found for player {nickname}.")
-            return
-
-        res = await pause_game(lobby, game_uuid)
-        if res.get("error"):
-            await ctx.send(f"⚠️ Failed to pause game: {res['error']}")
-        else:
-            await ctx.send(f"✅ Game for {nickname} paused successfully.")
+        return await bot.fetch_channel(channel_id)
     except Exception as e:
-        await ctx.send(f"❌ Exception occurred: {e}")
+        print(f"Failed to fetch channel {channel_id}: {e}")
+        return None
 
 
-@bot.command()
-async def resume(ctx, nickname: str):
-    """Resume a paused game by player nickname in default lobby."""
+# ---------------- MESSAGE HELPERS ---------------- #
+
+async def get_or_create_message(channel, msg_list, index):
+    """
+    Ensures message exists at index.
+    If missing → create once.
+    """
     try:
-        lobby = config.TOURN_ID
-        game_uuid = await find_player_game(lobby, config.SEASON_ID, nickname)
-        if not game_uuid:
-            await ctx.send(f"⚠️ No active game found for player {nickname}.")
-            return
+        if index < len(msg_list):
+            return msg_list[index]
+    except:
+        pass
 
-        res = await resume_game(lobby, game_uuid)
-        if res.get("error"):
-            await ctx.send(f"⚠️ Failed to resume game: {res['error']}")
-        else:
-            await ctx.send(f"✅ Game for {nickname} resumed successfully.")
-    except Exception as e:
-        await ctx.send(f"❌ Exception occurred: {e}")
+    msg = await channel.send("``` ```")
+    msg_list.append(msg)
+    return msg
+
+
+# ---------------- BOT READY ---------------- #
 
 @bot.event
 async def on_ready():
     global leaderboard_started, status_started
+
     check_config()
-    print(f'We have logged in as {bot.user}')
+    print(f"Logged in as {bot.user}")
 
-    # clear all messages in status channel
-    status_loop.channel = bot.get_channel(config.STATUS_CHANNEL_ID)
-    print('here0')
-    
-    # clear all message in leaderboard channels
-    leaderboard_loop.indv_channel = bot.get_channel(config.INDV_CHANNEL_ID)
-    leaderboard_loop.team_channel = bot.get_channel(config.TEAM_CHANNEL_ID)
-    leaderboard_loop.sanma_indv_channel = bot.get_channel(config.SANMA_INDV_CHANNEL_ID)
-    leaderboard_loop.sanma_team_channel = bot.get_channel(config.SANMA_TEAM_CHANNEL_ID)
-    print('fetched leaderboard channels')
-    async def clear_channel(channel):
-        async for message in channel.history(limit=100):
-            await message.delete()
-            time.sleep(1)
-    
-    await clear_channel(leaderboard_loop.indv_channel)
-    await clear_channel(leaderboard_loop.team_channel)
-    await clear_channel(leaderboard_loop.sanma_indv_channel)
-    await clear_channel(leaderboard_loop.sanma_team_channel)
-    await clear_channel(status_loop.channel)
-    print('cleared channels')
-    print('here1')
-    
-    leaderboard_loop.indv_msg_ids = config.INDV_CHANNEL_MSG_IDS
-    for i in range(5):
-        msg = await leaderboard_loop.indv_channel.send(content="``` \n```")
-        leaderboard_loop.indv_msg_ids.append(msg.id)
+    # channels
+    status_loop.channel = await safe_fetch_channel(config.STATUS_CHANNEL_ID)
 
-    msg = await leaderboard_loop.team_channel.send(content="``` \n```")
-    leaderboard_loop.team_msg_id = config.TEAM_CHANNEL_MSG_IDS
+    leaderboard_loop.indv_channel = await safe_fetch_channel(config.INDV_CHANNEL_ID)
+    leaderboard_loop.team_channel = await safe_fetch_channel(config.TEAM_CHANNEL_ID)
+    leaderboard_loop.sanma_indv_channel = await safe_fetch_channel(config.SANMA_INDV_CHANNEL_ID)
+    leaderboard_loop.sanma_team_channel = await safe_fetch_channel(config.SANMA_TEAM_CHANNEL_ID)
 
-    leaderboard_loop.sanma_indv_msg_ids = config.SANMA_INDV_CHANNEL_MSG_IDS
-    for i in range(5):
-        msg = await leaderboard_loop.sanma_indv_channel.send(content="``` \n```")
-        leaderboard_loop.sanma_indv_msg_ids.append(msg.id)
+    if not all([
+        status_loop.channel,
+        leaderboard_loop.indv_channel,
+        leaderboard_loop.team_channel
+    ]):
+        print("Missing channels — aborting startup")
+        return
 
-    msg = await leaderboard_loop.sanma_team_channel.send(content="``` \n```")
-    leaderboard_loop.sanma_team_msg_id = config.SANMA_TEAM_CHANNEL_MSG_IDS
-
+    # mappings
     leaderboard_loop.username2name = get_username2name_mapping()
     name2team = get_username2team_mapping()
-    print('here2')
+
     leaderboard_loop.username2team = {}
 
-    for username, name in leaderboard_loop.username2name.items():
-        if name not in name2team:
-            print(f"Hey {name}, you are not in the team list WTF")
-            continue
-        leaderboard_loop.username2team[username] = name2team[name]
+    for u, name in leaderboard_loop.username2name.items():
+        if name in name2team:
+            leaderboard_loop.username2team[u] = name2team[name]
+
     leaderboard_loop.all_players = list(leaderboard_loop.username2name.keys())
-    print('here3')
+
+    # init message storage
+    leaderboard_loop.indv_msgs = []
+    leaderboard_loop.team_msg = None
+    leaderboard_loop.sanma_indv_msgs = []
+    leaderboard_loop.sanma_team_msg = None
+
     if not leaderboard_started:
         leaderboard_loop.start()
         leaderboard_started = True
+
     if not status_started:
         status_loop.start()
         status_started = True
 
+
+# ---------------- LEADERBOARD LOOP ---------------- #
+
 @tasks.loop(seconds=config.LEADERBOARD_UPDATE_PERIOD)
 async def leaderboard_loop():
+
     games = await load_games(config.TOURN_ID, config.SEASON_ID)
-    indv_result = calculate_score(games, leaderboard_loop.all_players, leaderboard_loop.username2name)
-    team_result = calculate_score(games, leaderboard_loop.all_players, leaderboard_loop.username2team)
+
+    indv_result = calculate_score(
+        games,
+        leaderboard_loop.all_players,
+        leaderboard_loop.username2name
+    )
+
+    team_result = calculate_score(
+        games,
+        leaderboard_loop.all_players,
+        leaderboard_loop.username2team
+    )
+
     timestamp = int(time.time())
-    print('here4')
 
-    indv = format_leaderboard(indv_result)
-    for i in range(len(indv)):
-        msg_id = leaderboard_loop.indv_msg_ids[i]
-        msg = await leaderboard_loop.indv_channel.fetch_message(msg_id)
-        if i == len(indv) - 1:
-            indv[i] += f"Last edited on: <t:{timestamp}:R>"
-        await msg.edit(content=indv[i])
+    indv_rows = format_leaderboard(indv_result)
+    team_rows = format_leaderboard(team_result)
 
-    team = format_leaderboard(team_result)
-    assert len(team) == 1, str(len(team))
-    team_msg = team[0] + f"Last edited on: <t:{timestamp}:R>"
-    msg = await leaderboard_loop.team_channel.fetch_message(leaderboard_loop.team_msg_id)
-    await msg.edit(content=team_msg)
+    # chunking (SAFE FOR 103+ PLAYERS)
+    chunks = [indv_rows[i:i+25] for i in range(0, len(indv_rows), 25)]
 
-    # printPointDifferences(games, leaderboard_loop.all_players, leaderboard_loop.username2name)
+    # -------- INDIVIDUAL LEADERBOARD -------- #
+    for i, chunk in enumerate(chunks):
 
-    # sanma task
+        msg = await get_or_create_message(
+            leaderboard_loop.indv_channel,
+            leaderboard_loop.indv_msgs,
+            i
+        )
 
-    games = await load_games(config.SANMA_TOURN_ID, config.SANMA_SEASON_ID)
-    indv_result = calculate_score(games, leaderboard_loop.all_players, leaderboard_loop.username2name)
-    team_result = calculate_score(games, leaderboard_loop.all_players, leaderboard_loop.username2team)
+        content = "```" + "\n".join(chunk)
+        content += f"\nLast update: <t:{timestamp}:R>```"
 
-    indv = format_leaderboard(indv_result)
-    # assert len(indv) == 4, f"number of messages don't match for indv leaderboard {len(indv)} != {len(leaderboard_loop.indv_msg_ids)}" 
-    for i in range(len(indv)):
-        msg_id = leaderboard_loop.sanma_indv_msg_ids[i]
-        msg = await leaderboard_loop.sanma_indv_channel.fetch_message(msg_id)
-        if i == len(indv) - 1:
-            indv[i] += f"Last edited on: <t:{timestamp}:R>"
-        await msg.edit(content=indv[i])
+        await msg.edit(content=content)
+
+    # delete extra old messages if shrinking
+    while len(leaderboard_loop.indv_msgs) > len(chunks):
+        msg = leaderboard_loop.indv_msgs.pop()
+        await msg.delete()
+
+    # -------- TEAM LEADERBOARD -------- #
+    team_content = "```" + "\n".join(team_rows)
+    team_content += f"\nLast update: <t:{timestamp}:R>```"
+
+    if leaderboard_loop.team_msg is None:
+        leaderboard_loop.team_msg = await leaderboard_loop.team_channel.send("``` ```")
+
+    await leaderboard_loop.team_msg.edit(content=team_content)
 
 
-    team = format_leaderboard(team_result)
-    assert len(team) == 1, str(len(team))
-    team_msg = team[0] + f"Last edited on: <t:{timestamp}:R>"
-    msg = await leaderboard_loop.sanma_team_channel.fetch_message(leaderboard_loop.sanma_team_msg_id)
-    await msg.edit(content=team_msg)
+# ---------------- STATUS LOOP ---------------- #
 
 @tasks.loop(seconds=config.STATUS_UPDATE_PERIOD)
 async def status_loop():
     try:
-        four_p_content = await get_readied_players(config.TOURN_ID, config.SEASON_ID, 4)
-        sanma_content = await get_readied_players(config.SANMA_TOURN_ID, config.SANMA_SEASON_ID, 3)
-        timestamp = int(time.time())
-    
-        # If either failed to fetch, skip update to avoid overwriting with blank
-        if not four_p_content and not sanma_content:
-            print("⚠️ Failed to fetch both lobby statuses.")
-            return
-    
-        # Combine outputs neatly
-        content = ""
-        if four_p_content:
-            content += f"## 🀄 4-Player Lobby Status\n{four_p_content}\n\n"
-        if sanma_content:
-            content += f"## 🀄 3-Player (Sanma) Lobby Status\n{sanma_content}\n\n"
-        content += f"Last edited on: <t:{timestamp}:R>"
+        four_p = await get_readied_players(config.TOURN_ID, config.SEASON_ID, 4)
+        sanma = await get_readied_players(config.SANMA_TOURN_ID, config.SANMA_SEASON_ID, 3)
 
-        msg = await status_loop.channel.fetch_message(status_loop.status_msg_id)
-        await msg.edit(content=content)
+        timestamp = int(time.time())
+
+        content = ""
+
+        if four_p:
+            content += f"## 4-Player Lobby\n{four_p}\n\n"
+
+        if sanma:
+            content += f"## 3-Player Lobby\n{sanma}\n\n"
+
+        content += f"Last update: <t:{timestamp}:R>"
+
+        if not hasattr(status_loop, "msg"):
+            status_loop.msg = await status_loop.channel.send("``` ```")
+
+        await status_loop.msg.edit(content=content)
+
     except Exception as e:
-        print("Error in status_loop:", e)
+        print("Status loop error:", e)
+
+
+# ---------------- MAIN ---------------- #
 
 async def main():
     token = await get_token(config.MS_USERNAME, config.MS_PASSWORD)
-    print(token)
-    config.MS_TOKEN = token
-    if config.MS_TOKEN:
-        print("✅ Logged in to Mahjong Soul API")
-        print("Token:", config.MS_TOKEN)
-    else:
-        print('Could not get token')
+
+    if not token:
+        print("Failed to get Mahjong Soul token")
         return
+
+    config.MS_TOKEN = token
+    print("Logged into Mahjong Soul API")
+
     await bot.start(config.BOT_TOKEN)
+
 
 if __name__ == "__main__":
     asyncio.run(main())
