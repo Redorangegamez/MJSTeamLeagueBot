@@ -223,10 +223,10 @@ async def status_task():
             print("[STATUS] sending new status msg")
             state["status_msg"] = await ch.send("starting...")
     
-            print("[STATUS] editing msg")
-            await state["status_msg"].edit(content=content)
-    
-            print("[STATUS] tick finished")
+        print("[STATUS] editing msg")
+        await state["status_msg"].edit(content=content)
+
+        print("[STATUS] tick finished")
 
     except Exception:
         print("[STATUS ERROR]")
