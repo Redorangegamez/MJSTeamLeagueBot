@@ -42,6 +42,21 @@ async def safe_fetch(channel_id, name):
         print(f"[FETCH ERROR] {name}: {e}")
         return None
 
+# ---------------- SAFE EDIT ---------------- #
+
+async def safe_edit(msg, content, send_fallback):
+    try:
+        await msg.edit(content=content)
+        return msg
+
+    except discord.NotFound:
+        print("[WARN] Message missing, recreating...")
+
+        new_msg = await send_fallback()
+        await new_msg.edit(content=content)
+
+        return new_msg
+
 
 # ---------------- SETUP HOOK ---------------- #
 
@@ -170,11 +185,11 @@ async def leaderboard_task():
         # ---------------- EDIT MESSAGES ---------------- #
         
         for i, (msg, content) in enumerate(zip(state["indv_msgs"], indv_rows)):
-        
-            print(f"[LEADERBOARD] editing INDV chunk {i}")
-        
-            # content is already a full formatted message (<= 2000 chars)
-            await msg.edit(content=content)
+            state["indv_msgs"][i] = await safe_edit(
+                msg,
+                content,
+                lambda: ch.send("starting...")
+            )
         
         print("[LEADERBOARD] INDIVIDUAL leaderboard updated")
         
@@ -218,7 +233,11 @@ async def leaderboard_task():
         
         print("[LEADERBOARD] editing team message")
         
-        await state["team_msg"].edit(content=team_content)
+        state["team_msg"] = await safe_edit(
+            state["team_msg"],
+            team_content,
+            lambda: team_ch.send("starting...")
+        )
         
         print("[LEADERBOARD] team leaderboard updated")
 
@@ -275,7 +294,11 @@ async def status_task():
             state["status_msg"] = await ch.send("starting...")
     
         print("[STATUS] editing msg")
-        await state["status_msg"].edit(content=content)
+        state["status_msg"] = await safe_edit(
+            state["status_msg"],
+            content,
+            lambda: ch.send("starting...")
+        )
 
         print("[STATUS] tick finished")
 
