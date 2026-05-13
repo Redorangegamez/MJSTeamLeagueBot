@@ -28,28 +28,32 @@ state = {
     "channels": {}
 }
 
-# ---------------- SAFE FETCH ---------------- #
+# ---------------- HELPERS ---------------- #
+
+def timestamp():
+    return f"Last update: <t:{int(time.time())}:R>"
 
 async def safe_fetch(channel_id, name):
     try:
-        ch = await bot.fetch_channel(channel_id)
-        print(f"[FETCH] OK {name}")
-        return ch
+        return await bot.fetch_channel(channel_id)
     except Exception as e:
         print(f"[FETCH ERROR] {name}: {e}")
         return None
 
-# ---------------- SAFE EDIT ---------------- #
-
-async def safe_edit(channel, msg_id, content, fallback_send):
+async def safe_edit(channel, msg_id, content):
+    """
+    Always fetch fresh message before editing (prevents 404 crash)
+    """
     try:
         msg = await channel.fetch_message(msg_id)
-        return await msg.edit(content=content)
+        await msg.edit(content=content)
 
     except discord.NotFound:
         print("[WARN] message missing, recreating")
-        msg = await fallback_send()
-        return msg
+        new_msg = await channel.send("starting...")
+        return new_msg.id
+
+    return msg_id
 
 # ---------------- SETUP ---------------- #
 
@@ -75,18 +79,11 @@ async def setup_hook():
 
     print("[SETUP] tasks started")
 
-# ---------------- READY ---------------- #
-
 @bot.event
 async def on_ready():
     print(f"[READY] Logged in as {bot.user}")
 
-# ---------------- HELPERS ---------------- #
-
-def build_timestamp():
-    return f"Last update: <t:{int(time.time())}:R>"
-
-# ---------------- LEADERBOARD TASK ---------------- #
+# ---------------- LEADERBOARD ---------------- #
 
 @tasks.loop(seconds=config.LEADERBOARD_UPDATE_PERIOD)
 async def leaderboard_task():
@@ -94,22 +91,13 @@ async def leaderboard_task():
     try:
         games = await load_games(config.TOURN_ID, config.SEASON_ID)
 
-        indv = calculate_score(
-            games,
-            state["players"],
-            state["username2name"]
-        )
-
-        team = calculate_score(
-            games,
-            state["players"],
-            state["username2team"]
-        )
+        indv = calculate_score(games, state["players"], state["username2name"])
+        team = calculate_score(games, state["players"], state["username2team"])
 
         indv_rows = format_leaderboard(indv)
         team_rows = format_leaderboard(team)
 
-        # ---------------- INDV ---------------- #
+        # ---------------- INDIVIDUAL ---------------- #
 
         if "indv" not in state["channels"]:
             state["channels"]["indv"] = await safe_fetch(
@@ -118,24 +106,34 @@ async def leaderboard_task():
             )
 
         indv_ch = state["channels"]["indv"]
-
         if not indv_ch:
             return
 
+        # restore messages ONCE
+        if not state["indv_msg_ids"]:
+
+            print("[INDV] restoring messages")
+
+            async for msg in indv_ch.history(limit=50, oldest_first=False):
+                if msg.author == bot.user:
+                    state["indv_msg_ids"].append(msg.id)
+
+            state["indv_msg_ids"].reverse()
+
+            print(f"[INDV] restored {len(state['indv_msg_ids'])}")
+
+        # create missing messages ONLY if needed
         while len(state["indv_msg_ids"]) < len(indv_rows):
             msg = await indv_ch.send("starting...")
             state["indv_msg_ids"].append(msg.id)
 
+        # edit messages
         for i, (msg_id, content) in enumerate(zip(state["indv_msg_ids"], indv_rows)):
 
-            content = content + "\n" + build_timestamp()
+            if i == len(indv_rows) - 1:
+                content += "\n" + timestamp()
 
-            await safe_edit(
-                indv_ch,
-                msg_id,
-                content,
-                lambda: indv_ch.send("starting...")
-            )
+            state["indv_msg_ids"][i] = await safe_edit(indv_ch, msg_id, content)
 
         # ---------------- TEAM ---------------- #
 
@@ -146,29 +144,26 @@ async def leaderboard_task():
             )
 
         team_ch = state["channels"]["team"]
-
         if not team_ch:
             return
 
-        team_content = "\n".join(team_rows)
-        team_content += "\n" + build_timestamp()
+        team_content = "\n".join(team_rows) + "\n" + timestamp()
 
         if state["team_msg_id"] is None:
             msg = await team_ch.send("starting...")
             state["team_msg_id"] = msg.id
 
-        await safe_edit(
+        state["team_msg_id"] = await safe_edit(
             team_ch,
             state["team_msg_id"],
-            team_content,
-            lambda: team_ch.send("starting...")
+            team_content
         )
 
     except Exception:
         print("[LEADERBOARD ERROR]")
         traceback.print_exc()
 
-# ---------------- STATUS TASK ---------------- #
+# ---------------- STATUS ---------------- #
 
 @tasks.loop(seconds=config.STATUS_UPDATE_PERIOD)
 async def status_task():
@@ -194,7 +189,7 @@ async def status_task():
         if sanma:
             content += f"## 3P\n{sanma}\n\n"
 
-        content += build_timestamp()
+        content += timestamp()
 
         if "status" not in state["channels"]:
             state["channels"]["status"] = await safe_fetch(
@@ -203,7 +198,6 @@ async def status_task():
             )
 
         ch = state["channels"]["status"]
-
         if not ch:
             return
 
@@ -211,11 +205,10 @@ async def status_task():
             msg = await ch.send("starting...")
             state["status_msg_id"] = msg.id
 
-        await safe_edit(
+        state["status_msg_id"] = await safe_edit(
             ch,
             state["status_msg_id"],
-            content,
-            lambda: ch.send("starting...")
+            content
         )
 
     except Exception:
