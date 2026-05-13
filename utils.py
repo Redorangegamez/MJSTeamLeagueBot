@@ -51,27 +51,40 @@ def get_username2team_mapping():
 # to the same names (the team name).
 def calculate_score(games, all_players, name_mapping=None):
 
-    assert len(games) != 0, "there's no game WTF"
-    n_player = len(games[0]["accounts"])  # trying to figure out whether its yonma or sanma
+    # Default to yonma formatting if no games exist yet
+    n_player = 4
+
+    if len(games) != 0:
+        n_player = len(games[0]["accounts"])
 
     name2score = {}
-    name2rank  = {}
+    name2rank = {}
 
     for player in all_players:
+
         if name_mapping is not None:
+
             if player not in name_mapping:
                 continue
+
             player = name_mapping[player]
 
+        # Prevent duplicate team initialization
+        if player in name2score:
+            continue
+
         name2score[player] = 0
-        name2rank[player]  = [0] * n_player
+        name2rank[player] = [0] * n_player
 
     for game in games:
+
         if game["removed"] == 1:
             continue
+
         players = [None] * n_player
 
         for account in game["accounts"]:
+
             name = account["nickname"]
             seat = account["seat"]
 
@@ -81,7 +94,11 @@ def calculate_score(games, all_players, name_mapping=None):
             players[seat] = name
 
         scores = game["result"]["players"]
-        starting_score = sum([score["part_point_1"] for score in scores]) // n_player
+
+        starting_score = sum(
+            score["part_point_1"] for score in scores
+        ) // n_player
+
         assert starting_score % 100 == 0
 
         uma = {
@@ -90,9 +107,13 @@ def calculate_score(games, all_players, name_mapping=None):
         }[n_player]
 
         for rank, score in enumerate(scores):
+
             seat = score["seat"]
-            # store the actual score * 10 so it's an integer
-            delta = (score["part_point_1"] - starting_score) // 100
+
+            delta = (
+                (score["part_point_1"] - starting_score) // 100
+            )
+
             delta += uma[rank] * 10
 
             name = players[seat]
@@ -106,17 +127,19 @@ def calculate_score(games, all_players, name_mapping=None):
     lines = []
 
     for name in name2score:
+
         score = name2score[name]
         rank = name2rank[name]
+
         lines.append((score, name, rank))
 
-    """
-    If the player does not play any game, the rank
-    data will be an array with only 0s (length depends 
-    on sanma/yonma), and they should be rank the lowest 
-    on the leaderboard
-    """
-    lines.sort(reverse=True, key=lambda x: (x[0] if any(r > 0 for r in x[2]) else -100000000))
+    # Keep zero-game players at bottom
+    lines.sort(
+        reverse=True,
+        key=lambda x: (
+            x[0] if any(r > 0 for r in x[2]) else -100000000
+        )
+    )
 
     return lines
 
