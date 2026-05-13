@@ -128,48 +128,94 @@ async def leaderboard_task():
 
         if "indv" not in state["channels"]:
             print("[LEADERBOARD] fetching INDV channel")
-            state["channels"]["indv"] = await safe_fetch(config.INDV_CHANNEL_ID, "INDV")
-
+            state["channels"]["indv"] = await safe_fetch(
+                config.INDV_CHANNEL_ID,
+                "INDV"
+            )
+        
         ch = state["channels"]["indv"]
-
+        
         if not ch:
             print("[LEADERBOARD] INDV channel missing - abort")
             return
-
-        for i, chunk in enumerate(chunks):
-
-            print(f"[LEADERBOARD] sending chunk {i}")
-
-            msg = await ch.send("``` ```")
+        
+        # Load existing leaderboard messages after restart
+        if not state["indv_msgs"]:
+        
+            print("[LEADERBOARD] searching for existing leaderboard messages")
+        
+            async for msg in ch.history(limit=50):
+        
+                if msg.author == bot.user:
+                    state["indv_msgs"].append(msg)
+        
+            # history() returns newest first
+            state["indv_msgs"].reverse()
+        
+            print(f"[LEADERBOARD] found {len(state['indv_msgs'])} existing messages")
+        
+        # Create missing leaderboard messages
+        while len(state["indv_msgs"]) < len(chunks):
+        
+            print("[LEADERBOARD] creating missing leaderboard message")
+        
+            msg = await ch.send("starting...")
             state["indv_msgs"].append(msg)
-
-            content = "```" + "\n".join(chunk) + "```"
-
+        
+        # Edit leaderboard messages
+        for i, (msg, chunk) in enumerate(zip(state["indv_msgs"], chunks)):
+        
             print(f"[LEADERBOARD] editing chunk {i}")
+        
+            content = "\n".join(chunk)
+        
             await msg.edit(content=content)
-
+        
+        print("[LEADERBOARD] individual leaderboard updated")
+        
+        
         # ---------------- TEAM ---------------- #
-
+        
         if "team" not in state["channels"]:
             print("[LEADERBOARD] fetching TEAM channel")
-            state["channels"]["team"] = await safe_fetch(config.TEAM_CHANNEL_ID, "TEAM")
-
+            state["channels"]["team"] = await safe_fetch(
+                config.TEAM_CHANNEL_ID,
+                "TEAM"
+            )
+        
         team_ch = state["channels"]["team"]
-
+        
         if not team_ch:
             print("[LEADERBOARD] TEAM channel missing")
             return
-
+        
+        # Find existing team message after restart
         if state["team_msg"] is None:
-            print("[LEADERBOARD] sending team msg")
-            state["team_msg"] = await team_ch.send("``` ```")
-
-        team_content = "```" + "\n".join(team_rows) + "```"
-
-        print("[LEADERBOARD] editing team msg")
+        
+            print("[LEADERBOARD] searching for existing team message")
+        
+            async for msg in team_ch.history(limit=50):
+        
+                if msg.author == bot.user:
+                    state["team_msg"] = msg
+                    print(f"[LEADERBOARD] found existing team message: {msg.id}")
+                    break
+        
+        # Create one if none exists
+        if state["team_msg"] is None:
+        
+            print("[LEADERBOARD] creating new team message")
+        
+            state["team_msg"] = await team_ch.send("starting...")
+        
+        # Edit team leaderboard
+        team_content = "\n".join(team_rows)
+        
+        print("[LEADERBOARD] editing team message")
+        
         await state["team_msg"].edit(content=team_content)
-
-        print("[LEADERBOARD] tick finished")
+        
+        print("[LEADERBOARD] team leaderboard updated")
 
     except Exception as e:
         print("[LEADERBOARD ERROR]")
