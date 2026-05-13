@@ -212,13 +212,24 @@ async def status_task():
             return
 
         if state["status_msg"] is None:
-            print("[STATUS] sending msg")
-            state["status_msg"] = await ch.send("``` ```")
-
-        print("[STATUS] editing msg")
-        await state["status_msg"].edit(content=content)
-
-        print("[STATUS] tick finished")
+    
+        print("[STATUS] searching for existing status message")
+    
+        async for msg in ch.history(limit=50):
+    
+            if msg.author == bot.user:
+                state["status_msg"] = msg
+                print(f"[STATUS] found existing message: {msg.id}")
+                break
+    
+        if state["status_msg"] is None:
+            print("[STATUS] sending new status msg")
+            state["status_msg"] = await ch.send("starting...")
+    
+            print("[STATUS] editing msg")
+            await state["status_msg"].edit(content=content)
+    
+            print("[STATUS] tick finished")
 
     except Exception:
         print("[STATUS ERROR]")
