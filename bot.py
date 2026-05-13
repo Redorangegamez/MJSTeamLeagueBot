@@ -142,17 +142,32 @@ async def leaderboard_task():
                 config.TEAM_CHANNEL_ID,
                 "TEAM"
             )
-
+        
         team_ch = state["channels"]["team"]
         if not team_ch:
             return
-
-        team_content = "\n".join(team_rows) + "\n" + timestamp()
-
+        
+        # restore once
         if state["team_msg_id"] is None:
+        
+            print("[TEAM] restoring message")
+        
+            async for msg in team_ch.history(limit=50, oldest_first=False):
+                if msg.author == bot.user:
+                    state["team_msg_id"] = msg.id
+                    print(f"[TEAM] restored {msg.id}")
+                    break
+        
+        # create only if still missing
+        if state["team_msg_id"] is None:
+        
+            print("[TEAM] creating message (first time only)")
             msg = await team_ch.send("starting...")
             state["team_msg_id"] = msg.id
-
+        
+        # update message
+        team_content = "\n".join(team_rows) + "\n" + timestamp()
+        
         state["team_msg_id"] = await safe_edit(
             team_ch,
             state["team_msg_id"],
