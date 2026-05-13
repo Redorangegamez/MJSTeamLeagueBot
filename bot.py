@@ -139,39 +139,44 @@ async def leaderboard_task():
             print("[LEADERBOARD] INDV channel missing - abort")
             return
         
-        # Load existing leaderboard messages after restart
+        # Get leaderboard rows (already chunked + formatted safely)
+        indv_rows = format_leaderboard(indv)
+        
+        # ---------------- LOAD EXISTING MESSAGES ---------------- #
+        
         if not state["indv_msgs"]:
         
-            print("[LEADERBOARD] searching for existing leaderboard messages")
+            print("[LEADERBOARD] loading existing INDV messages")
         
-            async for msg in ch.history(limit=50):
+            async for msg in ch.history(limit=50, oldest_first=False):
         
                 if msg.author == bot.user:
                     state["indv_msgs"].append(msg)
         
-            # history() returns newest first
+            # ensure correct order
             state["indv_msgs"].reverse()
         
-            print(f"[LEADERBOARD] found {len(state['indv_msgs'])} existing messages")
+            print(f"[LEADERBOARD] found {len(state['indv_msgs'])} messages")
         
-        # Create missing leaderboard messages
-        while len(state["indv_msgs"]) < len(chunks):
+        # ---------------- CREATE MISSING MESSAGES ---------------- #
         
-            print("[LEADERBOARD] creating missing leaderboard message")
+        while len(state["indv_msgs"]) < len(indv_rows):
+        
+            print("[LEADERBOARD] creating missing INDV message")
         
             msg = await ch.send("starting...")
             state["indv_msgs"].append(msg)
         
-        # Edit leaderboard messages
-        for i, (msg, chunk) in enumerate(zip(state["indv_msgs"], chunks)):
+        # ---------------- EDIT MESSAGES ---------------- #
         
-            print(f"[LEADERBOARD] editing chunk {i}")
+        for i, (msg, content) in enumerate(zip(state["indv_msgs"], indv_rows)):
         
-            content = "\n".join(chunk)
+            print(f"[LEADERBOARD] editing INDV chunk {i}")
         
+            # content is already a full formatted message (<= 2000 chars)
             await msg.edit(content=content)
         
-        print("[LEADERBOARD] individual leaderboard updated")
+        print("[LEADERBOARD] INDIVIDUAL leaderboard updated")
         
         
         # ---------------- TEAM ---------------- #
