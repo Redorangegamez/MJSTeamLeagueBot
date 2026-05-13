@@ -163,10 +163,9 @@ def printPointDifferences(games, all_players, name_mapping=None):
             if player not in name_mapping:
                 continue
             player = name_mapping[player]
-            total_score[player] = 0
-
-    name2score[player] = 0
-    name2rank[player]  = [0] * n_player
+        total_score[player] = 0
+        name2score[player] = 0
+        name2rank[player]  = [0] * n_player
 
     for game in games:
         if game.get("removed", 0) == 1:
@@ -192,8 +191,6 @@ def printPointDifferences(games, all_players, name_mapping=None):
             delta = (score["part_point_1"] - starting_score) // 100 + uma[rank] * 10
             name = players[seat]
             if name is None or name not in total_score:
-                continue
-            if name not in total_score:
                 continue
             total_score[name] += delta
             seat_delta[seat] = delta
