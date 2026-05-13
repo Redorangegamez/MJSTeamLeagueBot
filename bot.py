@@ -10,6 +10,15 @@ from majsoul_tracker import get_readied_players
 from scrap import check_config
 from utils import *
 
+import sys
+import traceback
+
+def global_excepthook(exc_type, exc, tb):
+    print("🔥 GLOBAL CRASH DETECTED")
+    traceback.print_exception(exc_type, exc, tb)
+
+sys.excepthook = global_excepthook
+
 # ---------------- BOT ---------------- #
 
 intents = discord.Intents.default()
@@ -310,25 +319,25 @@ async def status_task():
 # ---------------- MAIN ---------------- #
 
 async def main():
-    print("[MAIN] starting")
-
     try:
+        print("[MAIN] started")
+
         token = await get_token(config.MS_USERNAME, config.MS_PASSWORD)
-
-        print("[MAIN] token result:", token)
-
-        if not token:
-            print("[MAIN] FAILED to get token")
-            return
+        print("[MAIN] token:", token)
 
         config.MS_TOKEN = token
 
-        print("[MAIN] starting bot")
+        print("[MAIN] starting bot.start")
+
         await bot.start(config.BOT_TOKEN)
 
+        print("[MAIN] bot.start returned (unexpected)")
+
     except Exception:
-        print("[MAIN ERROR]")
+        print("[MAIN CRASH]")
         traceback.print_exc()
+
+    print("[MAIN EXITED]")
 
 
 if __name__ == "__main__":
