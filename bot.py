@@ -216,10 +216,22 @@ async def status_task():
         if not ch:
             return
 
+        # restore after restart
         if state["status_msg_id"] is None:
+        
+            async for msg in ch.history(limit=50):
+        
+                if msg.author == bot.user:
+                    state["status_msg_id"] = msg.id
+                    break
+        
+        # create only if truly missing
+        if state["status_msg_id"] is None:
+        
             msg = await ch.send("starting...")
             state["status_msg_id"] = msg.id
-
+        
+        # safe update
         state["status_msg_id"] = await safe_edit(
             ch,
             state["status_msg_id"],
