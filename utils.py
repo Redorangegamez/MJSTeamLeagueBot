@@ -50,7 +50,7 @@ def get_username2team_mapping():
 # In case of team leaderboard, it maps multiple people
 # to the same names (the team name).
 def calculate_score(games, all_players, name_mapping=None):
-    print(games)
+
     # Default to yonma formatting if no games exist yet
     n_player = 4
 
