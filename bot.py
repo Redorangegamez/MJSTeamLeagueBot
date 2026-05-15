@@ -55,6 +55,19 @@ async def safe_edit(channel, msg_id, content):
 
     return msg_id
 
+async def refresh_token():
+    print("[TOKEN] refreshing token")
+    token = await get_token(
+        config.MS_USERNAME,
+        config.MS_PASSWORD
+    )
+    if not token:
+        print("[TOKEN] failed refresh")
+        return False
+    config.MS_TOKEN = token
+    print("[TOKEN] refreshed")
+    return True
+
 # ---------------- SETUP ---------------- #
 
 @bot.event
@@ -90,6 +103,14 @@ async def leaderboard_task():
 
     try:
         games = await load_games(config.TOURN_ID, config.SEASON_ID)
+        if len(games) == 0:
+            print("[TOKEN] possible expired token")
+            refreshed = await refresh_token()
+            if refreshed:
+                games = await load_games(
+                    config.TOURN_ID,
+                    config.SEASON_ID
+                )
 
         indv = calculate_score(games, state["players"], state["username2name"])
         team = calculate_score(games, state["players"], state["username2team"])
