@@ -75,6 +75,8 @@ def calculate_score(games, all_players, name_mapping=None):
                 config.TOURN_ID,
                 config.SEASON_ID
             )
+            if len(games) != 0:
+                n_player = len(games[0]["accounts"])
         else:
             n_player = len(games[0]["accounts"])
 
