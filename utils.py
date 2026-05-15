@@ -1,6 +1,19 @@
 import config
 from collections import defaultdict
 
+async def refresh_token():
+    print("[TOKEN] refreshing token")
+    token = await get_token(
+        config.MS_USERNAME,
+        config.MS_PASSWORD
+    )
+    if not token:
+        print("[TOKEN] failed refresh")
+        return False
+    config.MS_TOKEN = token
+    print("[TOKEN] refreshed")
+    return True
+
 # Load csv file containting Majsoul username and real name
 def get_username2name_mapping():
     mp = {}
@@ -55,7 +68,15 @@ def calculate_score(games, all_players, name_mapping=None):
     n_player = 4
 
     if len(games) != 0:
-        n_player = len(games[0]["accounts"])
+        print("[TOKEN] possible expired token")
+        refreshed = await refresh_token()
+        if refreshed:
+            games = await load_games(
+                config.TOURN_ID,
+                config.SEASON_ID
+            )
+        else:
+            n_player = len(games[0]["accounts"])
 
     name2score = {}
     name2rank = {}
