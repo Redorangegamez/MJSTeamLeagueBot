@@ -84,6 +84,13 @@ async def setup_hook():
     print("[SETUP] starting")
 
     check_config()
+    await bot.load_extension("league_roles")
+    if getattr(config, "GUILD_ID", None):
+        guild = discord.Object(id=config.GUILD_ID)
+        bot.tree.copy_global_to(guild=guild)
+        await bot.tree.sync(guild=guild)
+    else:
+        await bot.tree.sync()
 
     state["username2name"] = get_username2name_mapping()
     name2team = get_username2team_mapping()
