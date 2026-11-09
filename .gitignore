@@ -1,4 +1,12 @@
+# Local secrets and configuration
+config.py
 .config.py
-*.swp
-.config.py
+
+# Python virtual environments and caches
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Editor temporary files
 *.swp

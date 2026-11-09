@@ -1,5 +1,6 @@
 import aiohttp
 import asyncio
+import config
 
 API = 'https://contest-gate-202411.maj-soul.com/api/'
 REALTIME_API = 'https://common-202411.maj-soul.com/api/'
@@ -33,13 +34,13 @@ async def refresh_token():
     token = await get_token(config.MS_USERNAME, config.MS_PASSWORD)
     if token:
         stored_token = token
-        print("✅ Token refreshed:", stored_token)
+        print("✅ Token refreshed")
         return True
     print("❌ Failed to refresh token")
     return False
     
 
-async def dhs_get(endpoint):
+async def dhs_get(endpoint, retry=True):
     res = await return_json(
         f"{API}{endpoint}",
         method='GET',
@@ -50,17 +51,18 @@ async def dhs_get(endpoint):
     )
 
     # If token expired, refresh and retry once
-    if 'error' in res and 'Token expired' in res['error'] and retry:
+    if retry and isinstance(res, dict) and 'Token expired' in str(res.get('error', '')):
         refreshed = await refresh_token()
         if refreshed:
             return await dhs_get(endpoint, retry=False)
     return res
 
 
-async def dhs_post(endpoint, body):
+async def dhs_post(endpoint, body, retry=True):
     res = await return_json(
         f"{API}{endpoint}",
         method='POST',
+        body=body,
         headers={
             'Content-type': 'application/json; charset=UTF-8',
             'Authorization': stored_token,
@@ -71,7 +73,7 @@ async def dhs_post(endpoint, body):
     if 'error' in res and 'Token expired' in res['error'] and retry:
         refreshed = await refresh_token()
         if refreshed:
-            return await dhs_post(endpoint, retry=False)
+            return await dhs_post(endpoint, body, retry=False)
     return res
 
 
@@ -111,6 +113,7 @@ async def season_players(lobby, season):
     start = 0
     done = False
     global contestPlayers
+    contestPlayers = []
     while not done:
         players = await dhs_get(
             f"contest/contest_season_player_list?unique_id={lobby}&season_id={season}&search=&state=2&offset={start}&limit=100"
