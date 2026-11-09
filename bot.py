@@ -14,7 +14,7 @@ from utils import *
 
 intents = discord.Intents.default()
 intents.message_content = True
-bot = commands.Bot(command_prefix="!", intents=intents)
+bot = commands.Bot(command_prefix="!", intents=intents, allowed_mentions=discord.AllowedMentions.none())
 
 # ---------------- STATE ---------------- #
 
@@ -41,19 +41,28 @@ async def safe_fetch(channel_id, name):
         return None
 
 async def safe_edit(channel, msg_id, content):
-    """
-    Always fetch fresh message before editing (prevents 404 crash)
-    """
+    """Edit an existing message, or create one if the message was deleted."""
+    if msg_id is not None:
+        try:
+            msg = await channel.fetch_message(msg_id)
+            if msg.content != content:
+                await msg.edit(content=content)
+            return msg.id
+        except discord.NotFound as exc:
+            if exc.code == 10003:
+                print(f"[CHANNEL MISSING] {channel.id}")
+                return None
+            if exc.code != 10008:
+                raise
+            print("[WARN] message missing, recreating")
     try:
-        msg = await channel.fetch_message(msg_id)
-        await msg.edit(content=content)
-
-    except discord.NotFound:
-        print("[WARN] message missing, recreating")
-        new_msg = await channel.send("starting...")
+        new_msg = await channel.send(content)
         return new_msg.id
-
-    return msg_id
+    except discord.NotFound as exc:
+        if exc.code == 10003:
+            print(f"[CHANNEL MISSING] {channel.id}")
+            return None
+        raise
 
 async def refresh_token():
     print("[TOKEN] refreshing token")
