@@ -10,3 +10,4 @@ __pycache__/
 
 # Editor temporary files
 *.swp
+\n# Live roster mappings (back up securely on VM)\n*.sqlite3\n*.sqlite3-shm\n*.sqlite3-wal\n

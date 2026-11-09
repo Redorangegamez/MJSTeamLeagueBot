@@ -23,4 +23,4 @@ STATUS_UPDATE_PERIOD = 60  # seconds
 REGULAR_SEASON_START = "2026-09-07"
 REGULAR_SEASON_END = "2026-11-29"
 REGULAR_SEASON_REQUIRED_GAMES = 32
-REGULAR_SEASON_TIMEZONE = "America/Los_Angeles"
+REGULAR_SEASON_TIMEZONE = "America/Los_Angeles"\n# Organizer-only registration slash command\n# Set these to IDs from your Discord server; do not use role names.\nORGANIZER_ROLE_ID = 0\nPLAYER_ROLE_ID = 0\nTEAM_LEADER_ROLE_ID = 0\nGUILD_ID = 0  # Discord server ID (recommended for immediate command sync)\nROSTER_DB_PATH = "league_roster.sqlite3"\n
