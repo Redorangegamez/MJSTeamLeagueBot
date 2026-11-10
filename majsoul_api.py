@@ -127,6 +127,23 @@ async def contest_team_list(lobby, season):
             return teams
 
 
+async def contest_team_members(lobby, season, team_id, offset=0, limit=100):
+    """Fetch one page of team members.
+
+    Request parameter names and response schema must be verified against a
+    real Network request before this is used for automated roster imports.
+    """
+    from urllib.parse import urlencode
+    params = urlencode({
+        "unique_id": lobby,
+        "season_id": season,
+        "team_id": team_id,
+        "offset": offset,
+        "limit": limit,
+    })
+    return await dhs_get(f"contest/fetch_contest_team_member_list?{params}")
+
+
 async def season_players(lobby, season):
     start = 0
     done = False
