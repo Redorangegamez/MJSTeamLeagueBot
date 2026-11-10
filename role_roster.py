@@ -19,6 +19,7 @@ def connect(path=DEFAULT_DB):
         team TEXT NOT NULL REFERENCES teams(name)
     )""")
     db.execute("""CREATE TABLE IF NOT EXISTS majsoul_teams (team_id INTEGER PRIMARY KEY, name TEXT NOT NULL)""")
+    db.execute("""CREATE TABLE IF NOT EXISTS majsoul_members (account_id INTEGER PRIMARY KEY, nickname TEXT NOT NULL, team_id INTEGER NOT NULL)""")
     db.commit()
     return db
 
@@ -108,3 +109,41 @@ def sync_team_catalog(db, api_teams):
 def team_options(db):
     rows = list(db.execute("SELECT name FROM majsoul_teams ORDER BY name COLLATE NOCASE"))
     return [r[0] for r in rows] if rows else teams(db)
+
+def sync_official_roster(db, api_teams, members):
+    """Apply a fully fetched snapshot atomically. Preserve Discord registrations.
+
+    Existing player display names are kept; newly discovered players use their nickname.
+    """
+    team_by_id = {int(t["team_id"]): t["name"].strip() for t in api_teams}
+    if not team_by_id:
+        raise ValueError("No teams returned; refusing empty roster sync")
+    seen = set()
+    for item in members:
+        account_id = int(item["account_id"])
+        team_id = int(item["team_id"])
+        nickname = item["nickname"].strip()
+        if not nickname or team_id not in team_by_id or account_id in seen:
+            raise ValueError("Invalid or duplicate member in Mahjong Soul response")
+        seen.add(account_id)
+    with db:
+        for team_id, name in team_by_id.items():
+            db.execute("""INSERT INTO majsoul_teams(team_id,name) VALUES (?,?)
+                ON CONFLICT(team_id) DO UPDATE SET name=excluded.name""", (team_id, name))
+            db.execute("INSERT OR IGNORE INTO teams(name) VALUES (?)", (name,))
+        for item in members:
+            account_id = int(item["account_id"])
+            team_id = int(item["team_id"])
+            nickname = item["nickname"].strip()
+            team = team_by_id[team_id]
+            old = db.execute("SELECT nickname FROM majsoul_members WHERE account_id=?", (account_id,)).fetchone()
+            if old and old[0] != nickname:
+                db.execute("UPDATE registrations SET majsoul_username=? WHERE majsoul_username=?", (nickname, old[0]))
+                db.execute("UPDATE roster_players SET username=? WHERE username=?", (nickname, old[0]))
+            db.execute("""INSERT INTO roster_players(username,display_name,team) VALUES (?,?,?)
+                ON CONFLICT(username) DO UPDATE SET team=excluded.team""", (nickname, nickname, team))
+            db.execute("UPDATE registrations SET team=? WHERE majsoul_username=?", (team, nickname))
+            db.execute("""INSERT INTO majsoul_members(account_id,nickname,team_id) VALUES (?,?,?)
+                ON CONFLICT(account_id) DO UPDATE SET nickname=excluded.nickname,team_id=excluded.team_id""",
+                (account_id, nickname, team_id))
+    return len(api_teams), len(members)
