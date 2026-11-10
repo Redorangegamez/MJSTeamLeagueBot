@@ -4,8 +4,9 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 import config
-from role_roster import connect, seed_from_csv, teams, roster, set_player, remove_player, register
+from role_roster import connect, seed_from_csv, teams, roster, set_player, remove_player, register, team_options, sync_official_roster
 from utils import get_username2name_mapping, get_username2team_mapping
+from majsoul_api import contest_team_list, contest_team_members
 import csv
 
 
@@ -24,12 +25,35 @@ class RosterCommands(app_commands.Group):
 
     async def team_choices(self, interaction, current):
         return [app_commands.Choice(name=t[:100], value=t)
-                for t in teams(self.cog.db) if current.casefold() in t.casefold()][:25]
+                for t in team_options(self.cog.db) if current.casefold() in t.casefold()][:25]
 
     async def player_choices(self, interaction, current):
         return [app_commands.Choice(name=f"{name} ({u})"[:100], value=u)
                 for u, name, team in roster(self.cog.db)
                 if current.casefold() in (u + " " + name + " " + team).casefold()][:25]
+
+    @app_commands.command(name="sync", description="Import official Mahjong Soul teams and members")
+    async def sync(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        try:
+            api_teams = await contest_team_list(config.TOURN_ID, config.SEASON_ID)
+            if not api_teams:
+                raise ValueError("Mahjong Soul returned no teams")
+            members = []
+            for team in api_teams:
+                members.extend(await contest_team_members(config.TOURN_ID, config.SEASON_ID, team["team_id"]))
+            team_count, member_count = sync_official_roster(self.cog.db, api_teams, members)
+        except Exception as exc:
+            await interaction.followup.send(
+                f"Roster sync failed: {type(exc).__name__}: {exc}",
+                ephemeral=True,
+            )
+            return
+        await interaction.followup.send(
+            f"Imported **{team_count} teams** and **{member_count} players** from Mahjong Soul. "
+            "Discord links preserved; stale CSV-only players not removed.",
+            ephemeral=True,
+        )
 
     @app_commands.command(name="addplayer", description="Add or update a player's Mahjong Soul username and team")
     @app_commands.describe(username="Exact Mahjong Soul username", display_name="Leaderboard display name", team="Choose a team")
@@ -100,7 +124,7 @@ class LeagueRoles(commands.Cog):
 
     async def team_choices(self, interaction, current):
         return [app_commands.Choice(name=t[:100], value=t)
-                for t in teams(self.db) if current.casefold() in t.casefold()][:25]
+                for t in team_options(self.db) if current.casefold() in t.casefold()][:25]
 
     @app_commands.command(name="registerplayer", description="Link a Discord member to a rostered Mahjong Soul player")
     @app_commands.describe(member="Discord member", majsoul_username="Exact Mahjong Soul username",
