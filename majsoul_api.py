@@ -149,6 +149,23 @@ async def contest_team_members(lobby, season, team_id):
             return members
 
 
+async def delete_team_members(lobby, team_id, account_ids):
+    """Remove members from a Mahjong Soul team.
+
+    This is a destructive remote operation; callers must explicitly invoke it.
+    """
+    if not account_ids:
+        raise ValueError("At least one Mahjong Soul account ID is required")
+    data = await dhs_post("contest/delete_team_member", {
+        "unique_id": lobby,
+        "team_id": int(team_id),
+        "account_id_list": [int(account_id) for account_id in account_ids],
+    })
+    if not isinstance(data, dict) or "error" in data:
+        raise RuntimeError(f"Mahjong Soul team member deletion failed: {data}")
+    return data
+
+
 async def season_players(lobby, season):
     start = 0
     done = False
