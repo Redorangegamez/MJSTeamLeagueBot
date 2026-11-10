@@ -6,7 +6,7 @@ from discord.ext import commands
 import config
 from role_roster import connect, seed_from_csv, teams, roster, set_player, remove_player, register, team_options, sync_official_roster
 from utils import get_username2name_mapping, get_username2team_mapping
-from majsoul_api import contest_team_list, contest_team_members
+from majsoul_api import contest_team_list, contest_team_members, search_accounts, add_team_member, delete_team_members
 import csv
 
 
@@ -142,10 +142,70 @@ class LeagueRoles(commands.Cog):
         if not player_role or not leader_role:
             await interaction.followup.send("Configure PLAYER_ROLE_ID and TEAM_LEADER_ROLE_ID.", ephemeral=True)
             return
+        # Validate all local constraints before making a remote change.
+        team_row = self.db.execute(
+            "SELECT team_id FROM majsoul_teams WHERE name=?", (team,)
+        ).fetchone()
+        if not team_row:
+            await interaction.followup.send(
+                "Unknown official Mahjong Soul team. Run /roster sync first.", ephemeral=True
+            )
+            return
+        team_id = int(team_row[0])
+        username = majsoul_username.strip()
+        existing_link = self.db.execute(
+            "SELECT discord_id FROM registrations WHERE majsoul_username=?", (username,)
+        ).fetchone()
+        if existing_link and existing_link[0] != member.id:
+            await interaction.followup.send(
+                "That Mahjong Soul nickname is linked to another Discord member.", ephemeral=True
+            )
+            return
+        known = self.db.execute(
+            "SELECT account_id,team_id FROM majsoul_members WHERE nickname=?", (username,)
+        ).fetchall()
+        if len(known) != 1:
+            await interaction.followup.send(
+                "Could not uniquely resolve this nickname to a Mahjong Soul account ID. "
+                "Run /roster sync first; players not yet in a team need an account-ID lookup.",
+                ephemeral=True,
+            )
+            return
+        account_id, previous_team_id = map(int, known[0])
         try:
-            register(self.db, member.id, majsoul_username, team, team_leader)
-        except (ValueError, sqlite3.IntegrityError) as exc:
-            await interaction.followup.send(f"Registration rejected: {exc}", ephemeral=True)
+            lookup = await search_accounts([account_id])
+            accounts = lookup if isinstance(lookup, list) else lookup.get("list", [])
+            if not any(int(x.get("account_id", -1)) == account_id and
+                       x.get("nickname") == username for x in accounts):
+                raise ValueError("Mahjong Soul account lookup did not match the username")
+            if previous_team_id != team_id:
+                await delete_team_members(config.TOURN_ID, previous_team_id, [account_id])
+                try:
+                    await add_team_member(config.TOURN_ID, team_id, account_id, username)
+                except Exception:
+                    # Best effort compensation for a failed transfer.
+                    await add_team_member(config.TOURN_ID, previous_team_id, account_id, username)
+                    raise
+            remote_members = await contest_team_members(config.TOURN_ID, config.SEASON_ID, team_id)
+            if not any(int(x["account_id"]) == account_id for x in remote_members):
+                raise RuntimeError("Mahjong Soul did not confirm membership in the target team")
+            from role_roster import set_player
+            display_row = self.db.execute(
+                "SELECT display_name FROM roster_players WHERE username=?", (username,)
+            ).fetchone()
+            set_player(self.db, username, display_row[0] if display_row else username, team)
+            register(self.db, member.id, username, team, team_leader)
+            with self.db:
+                self.db.execute(
+                    "UPDATE majsoul_members SET team_id=? WHERE account_id=?",
+                    (team_id, account_id),
+                )
+        except Exception as exc:
+            await interaction.followup.send(
+                f"Registration stopped: {type(exc).__name__}: {exc}. "
+                "Check Mahjong Soul membership before retrying.",
+                ephemeral=True,
+            )
             return
         try:
             await member.add_roles(player_role, reason="League registration")
