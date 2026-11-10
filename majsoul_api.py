@@ -127,18 +127,26 @@ async def contest_team_list(lobby, season):
             return teams
 
 
-async def contest_team_members(body):
-    """Fetch a team member page using the verified POST endpoint.
-
-    Pass the exact JSON payload captured from Mahjong Soul's Network tab.
-    Response contains list, total, nickname, account_id, and team_id.
-    """
-    if not isinstance(body, dict):
-        raise ValueError("Team member request body must be a JSON object")
-    data = await dhs_post("contest/fetch_contest_team_member_list", body)
-    if not isinstance(data, dict) or not isinstance(data.get("list"), list):
-        raise RuntimeError("Unexpected Mahjong Soul team member response")
-    return data
+async def contest_team_members(lobby, season, team_id):
+    """Fetch all members of one tournament team using POST pagination."""
+    members = []
+    offset = 0
+    limit = 100
+    while True:
+        data = await dhs_post("contest/fetch_contest_team_member_list", {
+            "unique_id": lobby,
+            "season_id": season,
+            "team_id": team_id,
+            "offset": offset,
+            "limit": limit,
+        })
+        if not isinstance(data, dict) or not isinstance(data.get("list"), list):
+            raise RuntimeError(f"Unexpected team member response for team {team_id}")
+        batch = data["list"]
+        members.extend(batch)
+        offset += len(batch)
+        if not batch or offset >= data.get("total", offset):
+            return members
 
 
 async def season_players(lobby, season):
