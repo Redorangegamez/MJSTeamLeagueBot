@@ -18,6 +18,7 @@ def connect(path=DEFAULT_DB):
         username TEXT PRIMARY KEY, display_name TEXT NOT NULL,
         team TEXT NOT NULL REFERENCES teams(name)
     )""")
+    db.execute("""CREATE TABLE IF NOT EXISTS majsoul_teams (team_id INTEGER PRIMARY KEY, name TEXT NOT NULL)""")
     db.commit()
     return db
 
@@ -91,3 +92,19 @@ def team_mapping(db):
 
 def name_mapping(db):
     return {u: name for u, name in db.execute("SELECT username,display_name FROM roster_players")}
+
+def sync_team_catalog(db, api_teams):
+    """Upsert authoritative team names/IDs without deleting or reassigning local players."""
+    with db:
+        for item in api_teams:
+            team_id, name = int(item["team_id"]), item["name"].strip()
+            if not name:
+                raise ValueError("Empty team name returned by Mahjong Soul")
+            db.execute("""INSERT INTO majsoul_teams(team_id,name) VALUES (?,?)
+                ON CONFLICT(team_id) DO UPDATE SET name=excluded.name""", (team_id, name))
+            db.execute("INSERT OR IGNORE INTO teams(name) VALUES (?)", (name,))
+
+
+def team_options(db):
+    rows = list(db.execute("SELECT name FROM majsoul_teams ORDER BY name COLLATE NOCASE"))
+    return [r[0] for r in rows] if rows else teams(db)
