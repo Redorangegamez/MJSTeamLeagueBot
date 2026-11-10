@@ -9,6 +9,7 @@ from majsoul_api import *
 from majsoul_tracker import get_readied_players
 from scrap import check_config
 from utils import *
+from role_roster import connect, team_mapping, name_mapping
 
 # ---------------- BOT ---------------- #
 
@@ -101,7 +102,7 @@ async def setup_hook():
         if name in name2team
     }
 
-    state["players"] = list(state["username2name"].keys())
+    refresh_roster_state()
 
     leaderboard_task.start()
     status_task.start()
@@ -112,12 +113,23 @@ async def setup_hook():
 async def on_ready():
     print(f"[READY] Logged in as {bot.user}")
 
+def refresh_roster_state():
+    db = connect(getattr(config, "ROSTER_DB_PATH", "league_roster.sqlite3"))
+    try:
+        state["username2name"] = name_mapping(db)
+        state["username2team"] = team_mapping(db)
+        state["players"] = list(state["username2name"])
+    finally:
+        db.close()
+
+
 # ---------------- LEADERBOARD ---------------- #
 
 @tasks.loop(seconds=config.LEADERBOARD_UPDATE_PERIOD)
 async def leaderboard_task():
 
     try:
+        refresh_roster_state()
         games = await load_games(config.TOURN_ID, config.SEASON_ID)
         if len(games) == 0:
             print("[TOKEN] possible expired token")
