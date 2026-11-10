@@ -149,6 +149,36 @@ async def contest_team_members(lobby, season, team_id):
             return members
 
 
+async def search_accounts(account_ids):
+    """Resolve Mahjong Soul numeric account IDs."""
+    if not account_ids:
+        raise ValueError("Account ID list must not be empty")
+    data = await dhs_post("contest/search_accounts", {
+        "account_list": [int(account_id) for account_id in account_ids],
+    })
+    if not isinstance(data, (dict, list)) or (isinstance(data, dict) and "error" in data):
+        raise RuntimeError(f"Mahjong Soul account search failed: {data}")
+    return data
+
+
+async def add_team_member(lobby, team_id, account_id, nickname, remark=""):
+    """Add an account to a Mahjong Soul tournament team."""
+    if not nickname or not nickname.strip():
+        raise ValueError("Mahjong Soul nickname cannot be blank")
+    data = await dhs_post("contest/add_team_member", {
+        "unique_id": int(lobby),
+        "team_id": int(team_id),
+        "member_list": [{
+            "account_id": int(account_id),
+            "nickname": nickname.strip(),
+            "remark": remark,
+        }],
+    })
+    if not isinstance(data, dict) or "error" in data:
+        raise RuntimeError(f"Mahjong Soul team member addition failed: {data}")
+    return data
+
+
 async def delete_team_members(lobby, team_id, account_ids):
     """Remove members from a Mahjong Soul team.
 
