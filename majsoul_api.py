@@ -109,6 +109,24 @@ async def contest_list():
     return await dhs_get('contest/fetch_contest_list')
 
 
+async def contest_team_list(lobby, season):
+    """Fetch all teams in the tournament season, including stable team IDs."""
+    teams = []
+    offset = 0
+    limit = 100
+    while True:
+        data = await dhs_get(
+            f"contest/fetch_contest_team_list?unique_id={lobby}&season_id={season}&offset={offset}&limit={limit}"
+        )
+        if not isinstance(data, dict) or not isinstance(data.get("list"), list):
+            raise RuntimeError("Unexpected Mahjong Soul team-list response")
+        batch = data["list"]
+        teams.extend(batch)
+        offset += len(batch)
+        if not batch or offset >= data.get("total", offset):
+            return teams
+
+
 async def season_players(lobby, season):
     start = 0
     done = False
